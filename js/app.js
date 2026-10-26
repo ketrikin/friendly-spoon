@@ -3,15 +3,10 @@
 (function () {
   'use strict';
 
-  const { SCHEMA_QUERY, parseSchemaText, schemaFromRows, demoSchema } = window.SchemaTools;
+  const { SCHEMA_QUERY, parseSchemaText, demoSchema } = window.SchemaTools;
   const Sql = window.SqlGen;
 
-  const STORE = { schema: 'sqb.schema', query: 'sqb.query', saved: 'sqb.saved', conn: 'sqb.connection', maxRows: 'sqb.maxRows' };
-
-  // Words that can't be used as a bare table alias.
-  const RESERVED = new Set(['add', 'all', 'and', 'any', 'as', 'asc', 'by', 'case', 'desc', 'end', 'exec', 'from', 'go',
-    'in', 'into', 'is', 'join', 'key', 'kill', 'left', 'like', 'not', 'null', 'of', 'off', 'on', 'or', 'over', 'right',
-    'save', 'set', 'top', 'use', 'user', 'when', 'with']);
+  const STORE = { schema: 'sqb.schema', query: 'sqb.query', saved: 'sqb.saved' };
 
   const $ = sel => document.querySelector(sel);
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -26,11 +21,6 @@
     filter: '',
     expanded: {},
     suggestions: [],
-    backend: false,          // true when served by the local server (npm start)
-    conn: { connected: false },
-    databases: [],
-    running: null,           // AbortController of the query in progress
-    results: null,           // last successful result set
   };
 
   function load(key) {
@@ -59,7 +49,7 @@
     if (!base) base = name.replace(/[^A-Za-z]/g, '').slice(0, 1).toLowerCase() || 't';
     const used = new Set(instances().map(i => i.alias));
     let alias = base;
-    for (let n = 2; used.has(alias) || RESERVED.has(alias); n++) alias = base + n;
+    for (let n = 2; used.has(alias); n++) alias = base + n;
     return alias;
   }
 
@@ -121,7 +111,6 @@
   function renameAlias(oldAlias, raw) {
     const alias = String(raw).trim().replace(/[^A-Za-z0-9_]/g, '');
     if (!alias || /^\d/.test(alias) || alias === oldAlias) return false;
-    if (RESERVED.has(alias.toLowerCase())) { toast('"' + alias + '" is a SQL keyword — choose another alias'); return false; }
     if (instances().some(i => i.alias === alias)) { toast('Alias "' + alias + '" is already in use'); return false; }
     const q = state.query;
     if (q.from.alias === oldAlias) q.from.alias = alias;
@@ -205,8 +194,7 @@
       html += '</li>';
     });
     html += '</ul>';
-    $('#schema-tree').innerHTML = shown ? html
-      : `<p class="empty">${tables.length ? 'No matching tables.' : 'No tables in this database.'}</p>`;
+    $('#schema-tree').innerHTML = shown ? html : '<p class="empty">No matching tables.</p>';
   }
 
   function renderBuilder() {
@@ -401,191 +389,6 @@
     obj[last] = value;
   }
 
-  // ---------- Local server: connection and running queries ----------
-
-  async function api(path, body, signal) {
-    const init = body === undefined ? { signal }
-      : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal };
-    const res = await fetch(path, init);
-    const data = await res.json().catch(() => ({ error: 'Unexpected response from the server (' + res.status + ').' }));
-    if (!res.ok) throw Object.assign(new Error(data.error || res.statusText), data);
-    return data;
-  }
-
-  async function detectBackend() {
-    if (!/^https?:$/.test(location.protocol)) return renderConnection();
-    try {
-      state.conn = await api('/api/status');
-      state.backend = true;
-      if (state.conn.connected) await loadDatabases();
-    } catch (e) {
-      state.backend = false;
-    }
-    renderConnection();
-  }
-
-  async function loadDatabases() {
-    try { state.databases = (await api('/api/databases')).databases; } catch (e) { state.databases = []; }
-  }
-
-  function renderConnection() {
-    const c = state.conn;
-    const el = $('#conn-status');
-    el.classList.toggle('on', !!c.connected);
-    el.textContent = c.connected ? (c.server || 'Connected') + (c.login ? ' · ' + c.login : '') : 'Not connected';
-    el.title = c.connected ? `SQL Server ${c.version || ''} ${c.edition || ''}`.trim() : 'Database connection';
-    $('#connect-btn').textContent = c.connected ? 'Connection' : 'Connect';
-    const dbSelect = $('#db-select');
-    dbSelect.hidden = !c.connected || !state.databases.length;
-    dbSelect.innerHTML = options(state.databases.map(d => [d, d]), c.database);
-    document.querySelectorAll('.needs-conn').forEach(b => { b.hidden = !c.connected; });
-    const run = $('#run-btn');
-    run.textContent = state.running ? '■ Cancel' : '▶ Run';
-    $('#sql-hint').hidden = !!c.connected;
-  }
-
-  function openConnect() {
-    const saved = load(STORE.conn) || { auth: 'windows', server: 'localhost', encrypt: true, trustServerCertificate: true };
-    const form = $('#connect-form');
-    ['server', 'auth', 'domain', 'user', 'odbcDriver', 'database'].forEach(k => {
-      if (saved[k] != null && saved[k] !== '') form.elements[k].value = saved[k];
-    });
-    form.elements.encrypt.checked = saved.encrypt !== false;
-    form.elements.trustServerCertificate.checked = saved.trustServerCertificate !== false;
-    if (state.conn.connected && state.conn.database) form.elements.database.value = state.conn.database;
-    $('#no-backend').hidden = state.backend;
-    $('#connect-fields').hidden = !state.backend;
-    $('#connect-error').hidden = true;
-    updateAuthFields();
-    $('#connect-dialog').showModal();
-  }
-
-  function updateAuthFields() {
-    const auth = $('#cf-auth').value;
-    document.querySelectorAll('.auth-login').forEach(el => { el.hidden = auth === 'windows'; });
-    document.querySelectorAll('.auth-ntlm').forEach(el => { el.hidden = auth !== 'ntlm'; });
-    document.querySelectorAll('.auth-windows').forEach(el => { el.hidden = auth !== 'windows'; });
-  }
-
-  async function submitConnect() {
-    const f = $('#connect-form').elements;
-    const settings = {
-      server: f.server.value.trim(), auth: f.auth.value, domain: f.domain.value.trim(), user: f.user.value.trim(),
-      odbcDriver: f.odbcDriver.value.trim(), database: f.database.value.trim(),
-      encrypt: f.encrypt.checked, trustServerCertificate: f.trustServerCertificate.checked,
-    };
-    const button = $('#connect-submit');
-    button.disabled = true;
-    button.textContent = 'Connecting…';
-    $('#connect-error').hidden = true;
-    try {
-      state.conn = await api('/api/connect', Object.assign({ password: f.password.value }, settings));
-      store(STORE.conn, settings); // everything except the password
-      f.password.value = '';
-      $('#connect-dialog').close();
-      await afterConnect();
-    } catch (e) {
-      $('#connect-error').textContent = e.message;
-      $('#connect-error').hidden = false;
-    } finally {
-      button.disabled = false;
-      button.textContent = 'Connect';
-    }
-  }
-
-  async function afterConnect() {
-    await loadDatabases();
-    renderConnection();
-    await loadSchemaFromDb();
-  }
-
-  async function loadSchemaFromDb() {
-    try {
-      const { rows } = await api('/api/schema');
-      if (!rows.length) {
-        applySchema({ tables: {} });
-        toast('Connected to ' + state.conn.database + ' — it has no tables or views');
-        return;
-      }
-      applySchema(schemaFromRows(rows));
-      toast('Connected to ' + state.conn.database + ' — loaded ' + Object.keys(state.schema.tables).length + ' tables');
-    } catch (e) {
-      toast('Could not load the schema: ' + e.message);
-    }
-  }
-
-  async function runQuery() {
-    if (state.running) { state.running.abort(); return; }
-    if (!state.backend || !state.conn.connected) { openConnect(); return; }
-    if (!state.query.from) { toast('Build a query first — pick a table on the left'); return; }
-    const { sql } = currentSql();
-    const pane = $('#results-pane');
-    pane.hidden = false;
-    $('#results-meta').className = 'results-meta';
-    $('#results-meta').textContent = 'Running…';
-    state.running = new AbortController();
-    renderConnection();
-    const started = Date.now();
-    const timer = setInterval(() => {
-      $('#results-meta').textContent = 'Running… ' + ((Date.now() - started) / 1000).toFixed(1) + ' s';
-    }, 200);
-    try {
-      state.results = await api('/api/query', { sql, maxRows: +$('#max-rows').value }, state.running.signal);
-      renderResults();
-    } catch (e) {
-      state.results = null;
-      $('#results-meta').className = 'results-meta err';
-      if (e.name === 'AbortError') {
-        $('#results-meta').textContent = 'Cancelled.';
-        $('#results').innerHTML = '';
-      } else {
-        $('#results-meta').textContent = 'Query failed.';
-        const where = [e.number ? 'Msg ' + e.number : '', e.line ? 'Line ' + e.line : ''].filter(Boolean).join(', ');
-        $('#results').innerHTML = `<div class="message err">${esc((where ? where + '\n' : '') + e.message)}</div>`;
-      }
-    } finally {
-      clearInterval(timer);
-      state.running = null;
-      renderConnection();
-    }
-  }
-
-  const NUMERIC_RESULT = /^(tinyint|smallint|int|bigint|decimal|numeric|float|real|money|smallmoney)$/;
-
-  function renderResults() {
-    const r = state.results;
-    if (!r) return;
-    const meta = `${r.rowCount.toLocaleString()} row${r.rowCount === 1 ? '' : 's'}` +
-      (r.truncated ? ` (stopped at the ${r.rowCount.toLocaleString()}-row limit — add filters or raise Max rows)` : '') +
-      ` · ${r.elapsedMs.toLocaleString()} ms · ${state.conn.database || ''}`;
-    $('#results-meta').className = 'results-meta';
-    $('#results-meta').textContent = meta;
-    if (!r.columns.length) {
-      $('#results').innerHTML = '<div class="message">The query ran but returned no result set.</div>';
-      return;
-    }
-    const numeric = r.columns.map(c => NUMERIC_RESULT.test(c.type));
-    const head = '<tr><th class="rn"></th>' + r.columns.map(c =>
-      `<th>${esc(c.name || '(No column name)')}<span class="t">${esc(c.type)}</span></th>`).join('') + '</tr>';
-    const body = r.rows.map((row, i) => '<tr><td class="rn">' + (i + 1) + '</td>' + row.map((v, j) => v === null
-      ? '<td class="null">NULL</td>'
-      : `<td${numeric[j] ? ' class="num"' : ''} title="${esc(v)}">${esc(v)}</td>`).join('') + '</tr>').join('');
-    $('#results').innerHTML = `<table class="grid"><thead>${head}</thead><tbody>${body}</tbody></table>` +
-      (r.rows.length ? '' : '<div class="message muted">No rows matched.</div>');
-  }
-
-  function resultsAsText(delim) {
-    const r = state.results;
-    const cell = v => {
-      if (v === null) return delim === '\t' ? 'NULL' : '';
-      const s = String(v);
-      if (delim === '\t') return s.replace(/[\t\r\n]+/g, ' ');
-      return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
-    };
-    return [r.columns.map(c => cell(c.name)).join(delim)]
-      .concat(r.rows.map(row => row.map(cell).join(delim))).join('\r\n');
-  }
-
   // ---------- Events ----------
 
   const actions = {
@@ -673,33 +476,6 @@
       toast('Loaded the demo schema');
     },
     'close-dialog': el => el.closest('dialog').close(),
-    'open-connect': () => openConnect(),
-    'disconnect': async () => {
-      try { state.conn = await api('/api/disconnect', {}); } catch (e) { toast(e.message); }
-      state.databases = [];
-      $('#connect-dialog').close();
-      renderConnection();
-    },
-    'load-db-schema': async () => {
-      $('#import-dialog').close();
-      await loadSchemaFromDb();
-    },
-    'run-query': () => runQuery(),
-    'close-results': () => { $('#results-pane').hidden = true; },
-    'copy-results': () => {
-      if (!state.results) { toast('No results to copy'); return; }
-      copyText(resultsAsText('\t'), 'Results copied — paste into Excel');
-    },
-    'download-csv': () => {
-      if (!state.results) { toast('No results to download'); return; }
-      // The byte-order mark makes Excel read the file as UTF-8.
-      const blob = new Blob(['\uFEFF' + resultsAsText(',') + '\r\n'], { type: 'text/csv' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'results.csv';
-      a.click();
-      URL.revokeObjectURL(a.href);
-    },
   };
 
   function applySchema(schema) {
@@ -722,14 +498,6 @@
   document.addEventListener('change', e => {
     const el = e.target;
     const action = el.dataset.action;
-    if (el.id === 'cf-auth') { updateAuthFields(); return; }
-    if (el.id === 'max-rows') { store(STORE.maxRows, el.value); return; }
-    if (el.id === 'db-select') {
-      api('/api/use-database', { database: el.value })
-        .then(c => { state.conn = c; return afterConnect(); })
-        .catch(err => { toast(err.message); renderConnection(); });
-      return;
-    }
     if (action === 'set-from' && el.value) { useTable(el.value); renderAll(); return; }
     if (action === 'add-any-join' && el.value) { addJoin(el.value); renderAll(); return; }
     if (el.dataset.alias !== undefined) {
@@ -754,22 +522,6 @@
     }
   });
 
-  $('#connect-form').addEventListener('submit', e => {
-    e.preventDefault();
-    submitConnect();
-  });
-
-  // Ctrl+Enter (or F5, as in SSMS) runs the query once connected.
-  document.addEventListener('keydown', e => {
-    const run = (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) || (e.key === 'F5' && state.conn.connected);
-    if (!run || document.querySelector('dialog[open]')) return;
-    e.preventDefault();
-    runQuery();
-  });
-
-  const savedMax = load(STORE.maxRows);
-  if (savedMax && $(`#max-rows option[value="${savedMax}"]`)) $('#max-rows').value = savedMax;
   $('#schema-query').innerHTML = highlight(SCHEMA_QUERY);
   renderAll();
-  detectBackend();
 })();

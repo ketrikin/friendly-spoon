@@ -10,9 +10,6 @@
   <header class="topbar">
     <h1>SQL Query Builder <span class="sub">for SQL Server / SSMS</span></h1>
     <nav>
-      <span id="conn-status" class="conn" title="Database connection">Not connected</span>
-      <select id="db-select" title="Switch database" hidden></select>
-      <button id="connect-btn" data-action="open-connect">Connect</button>
       <button data-action="open-import">Import schema</button>
       <button data-action="open-saved">Saved queries</button>
       <button data-action="new-query">New query</button>
@@ -36,34 +33,15 @@
       <div class="pane-head">
         <h2>T-SQL</h2>
         <div class="btn-row">
-          <button id="run-btn" class="primary" data-action="run-query" title="Run (Ctrl+Enter or F5)">▶ Run</button>
-          <button data-action="copy-sql">Copy</button>
+          <button class="primary" data-action="copy-sql">Copy</button>
           <button data-action="download-sql">Download .sql</button>
           <button data-action="save-query">Save</button>
         </div>
       </div>
       <pre id="sql-output" class="sql-output"></pre>
       <ul id="warnings" class="warnings"></ul>
-      <p class="hint" id="sql-hint">Paste into an SSMS query window and press <kbd>F5</kbd>. Tip: try it with
+      <p class="hint">Paste into an SSMS query window and press <kbd>F5</kbd>. Tip: try it with
         <em>TOP</em> set first on large tables.</p>
-    </section>
-
-    <section id="results-pane" class="pane results-pane" hidden>
-      <div class="pane-head">
-        <h2>Results</h2>
-        <span id="results-meta" class="results-meta"></span>
-        <div class="btn-row">
-          <label class="muted">Max rows
-            <select id="max-rows">
-              <option value="100">100</option><option value="1000" selected>1,000</option><option value="5000">5,000</option><option value="10000">10,000</option><option value="50000">50,000</option>
-            </select>
-          </label>
-          <button data-action="copy-results" title="Copy with headers (paste into Excel)">Copy</button>
-          <button data-action="download-csv">Download .csv</button>
-          <button class="icon" data-action="close-results" title="Hide results">✕</button>
-        </div>
-      </div>
-      <div id="results" class="results"></div>
     </section>
   </main>
 
@@ -84,65 +62,11 @@
       <textarea id="schema-input" rows="8" placeholder="Paste the SSMS results here…"></textarea>
       <p id="import-error" class="error" hidden></p>
       <div class="btn-row end">
-        <button type="button" data-action="load-db-schema" class="needs-conn" hidden>Load from connected database</button>
         <button type="button" data-action="load-demo">Use demo schema</button>
         <button type="button" data-action="close-dialog">Cancel</button>
         <button type="button" class="primary" data-action="do-import">Import</button>
       </div>
       <p class="hint">Your schema stays in this browser (local storage). Nothing is sent anywhere.</p>
-    </form>
-  </dialog>
-
-  <dialog id="connect-dialog">
-    <form method="dialog" class="dialog-body" id="connect-form">
-      <h2>Connect to SQL Server</h2>
-      <div id="no-backend" hidden>
-        <p>To run queries, start the app's local server instead of opening the file directly:</p>
-        <ol class="steps">
-          <li>Install <a href="https://nodejs.org" target="_blank" rel="noopener">Node.js</a> (version 18 or newer).</li>
-          <li>Open a terminal in the app's folder and run <code>npm install</code> (first time only), then <code>npm start</code>.</li>
-          <li>Open <a href="http://localhost:3210">http://localhost:3210</a> in your browser.</li>
-        </ol>
-        <p class="hint">On Windows you can also double-click <code>start.cmd</code>.</p>
-        <div class="btn-row end"><button type="button" data-action="close-dialog">Close</button></div>
-      </div>
-      <div id="connect-fields">
-        <p class="hint">Use the same details as the SSMS “Connect to Server” window.</p>
-        <div class="form-grid">
-          <label for="cf-server">Server name</label>
-          <input id="cf-server" name="server" placeholder="localhost\SQLEXPRESS  or  myserver,1433" required>
-          <label for="cf-auth">Authentication</label>
-          <select id="cf-auth" name="auth">
-            <option value="windows">Windows Authentication</option>
-            <option value="sql">SQL Server Authentication</option>
-            <option value="ntlm">Windows (NTLM: domain, user and password)</option>
-          </select>
-          <label for="cf-domain" class="auth-ntlm">Domain</label>
-          <input id="cf-domain" name="domain" class="auth-ntlm" autocomplete="off">
-          <label for="cf-user" class="auth-login">Login</label>
-          <input id="cf-user" name="user" class="auth-login" autocomplete="username">
-          <label for="cf-password" class="auth-login">Password</label>
-          <input id="cf-password" name="password" class="auth-login" type="password" autocomplete="current-password">
-          <label for="cf-driver" class="auth-windows">ODBC driver</label>
-          <input id="cf-driver" name="odbcDriver" class="auth-windows" value="ODBC Driver 18 for SQL Server">
-          <label for="cf-database">Database</label>
-          <input id="cf-database" name="database" placeholder="(default database)">
-          <span></span>
-          <div class="checks">
-            <label><input type="checkbox" name="encrypt" checked> Encrypt connection</label>
-            <label><input type="checkbox" name="trustServerCertificate" checked> Trust server certificate</label>
-          </div>
-        </div>
-        <p id="connect-error" class="error" hidden></p>
-        <div class="btn-row end">
-          <button type="button" data-action="disconnect" class="needs-conn" hidden>Disconnect</button>
-          <button type="button" data-action="close-dialog">Cancel</button>
-          <button type="submit" class="primary" id="connect-submit">Connect</button>
-        </div>
-        <p class="hint">Your password is kept only in the local server's memory while it runs; it is never saved.
-          Queries run read-only: only single <code>SELECT</code> statements are allowed, and each one runs inside a
-          transaction that is rolled back.</p>
-      </div>
     </form>
   </dialog>
 
