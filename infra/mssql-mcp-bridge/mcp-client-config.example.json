@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "synapse-sql": {
+      "type": "http",
+      "url": "https://<your-bridge-host>/mcp",
+      "headers": {
+        "Authorization": "Bearer ${SYNAPSE_MCP_TOKEN}"
+      }
+    }
+  }
+}
