@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SQL Query Builder</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>SQL Query Builder <span class="sub">for SQL Server / SSMS</span></h1>
+    <nav>
+      <button data-action="open-import">Import schema</button>
+      <button data-action="open-saved">Saved queries</button>
+      <button data-action="new-query">New query</button>
+    </nav>
+  </header>
+
+  <main class="layout">
+    <aside class="pane schema-pane">
+      <div class="pane-head">
+        <h2>Schema</h2>
+        <input id="schema-filter" type="search" placeholder="Filter tables &amp; columns" autocomplete="off">
+      </div>
+      <div id="schema-tree" class="schema-tree"></div>
+    </aside>
+
+    <section class="pane builder-pane">
+      <div id="builder"></div>
+    </section>
+
+    <section class="pane sql-pane">
+      <div class="pane-head">
+        <h2>T-SQL</h2>
+        <div class="btn-row">
+          <button class="primary" data-action="copy-sql">Copy</button>
+          <button data-action="download-sql">Download .sql</button>
+          <button data-action="save-query">Save</button>
+        </div>
+      </div>
+      <pre id="sql-output" class="sql-output"></pre>
+      <ul id="warnings" class="warnings"></ul>
+      <p class="hint">Paste into an SSMS query window and press <kbd>F5</kbd>. Tip: try it with
+        <em>TOP</em> set first on large tables.</p>
+    </section>
+  </main>
+
+  <dialog id="import-dialog">
+    <form method="dialog" class="dialog-body">
+      <h2>Import your database schema</h2>
+      <ol class="steps">
+        <li>In SSMS, open a new query on your database and run this query:
+          <div class="code-wrap">
+            <pre id="schema-query" class="sql-output small"></pre>
+            <button type="button" data-action="copy-schema-query">Copy query</button>
+          </div>
+        </li>
+        <li>In the results grid, click the top-left corner cell to select everything, then right-click →
+          <strong>Copy with Headers</strong>.</li>
+        <li>Paste below and click <strong>Import</strong>.</li>
+      </ol>
+      <textarea id="schema-input" rows="8" placeholder="Paste the SSMS results here…"></textarea>
+      <p id="import-error" class="error" hidden></p>
+      <div class="btn-row end">
+        <button type="button" data-action="load-demo">Use demo schema</button>
+        <button type="button" data-action="close-dialog">Cancel</button>
+        <button type="button" class="primary" data-action="do-import">Import</button>
+      </div>
+      <p class="hint">Your schema stays in this browser (local storage). Nothing is sent anywhere.</p>
+    </form>
+  </dialog>
+
+  <dialog id="saved-dialog">
+    <form method="dialog" class="dialog-body">
+      <h2>Saved queries</h2>
+      <div id="saved-list"></div>
+      <div class="btn-row end">
+        <button type="button" data-action="close-dialog">Close</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" hidden></div>
+
+  <script src="js/schema.js"></script>
+  <script src="js/sql.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

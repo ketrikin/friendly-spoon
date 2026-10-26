@@ -1,0 +1,9 @@
+{
+  "name": "sql-query-builder",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Browser-based visual query builder that generates T-SQL for SQL Server / SSMS",
+  "scripts": {
+    "test": "node --test"
+  }
+}
