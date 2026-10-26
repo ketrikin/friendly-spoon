@@ -12,12 +12,31 @@
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
   function emptyQuery() {
-    return { from: null, joins: [], select: [], where: [], orderBy: [], distinct: false, top: '' };
+    return {
+      from: null, joins: [], select: [], where: [], orderBy: [], distinct: false, top: '', offset: '',
+      version: '2017', rollup: false, into: '', vars: [],
+      dedupe: { on: false, partition: [''], orderCol: '', orderDir: 'DESC' },
+    };
   }
+
+  // New rows added from the builder.
+  const TEMPLATES = {
+    column: () => ({ kind: 'column', col: '', agg: '', fn: '', args: [], as: '' }),
+    count: () => ({ kind: 'column', col: '*', agg: 'COUNT', fn: '', args: [], as: 'RowCount' }),
+    concat: () => ({ kind: 'column', col: '', agg: 'STRING_AGG', fn: '', args: [], as: '', sep: ', ', distinct: false, aggOrderCol: '', aggOrderDir: 'ASC' }),
+    expr: () => ({ kind: 'expr', expr: '', isAgg: false, as: '' }),
+    case: () => ({ kind: 'case', whens: [TEMPLATES.when()], else: '', as: '' }),
+    when: () => ({ col: '', fn: '', args: [], op: '=', value: '', value2: '', then: '' }),
+    window: () => ({ kind: 'window', wfn: 'ROW_NUMBER', col: '', n: '', partition: [''], wOrderCol: '', wOrderDir: 'ASC', frame: 'running', as: 'RowNum' }),
+    filter: () => ({ conj: 'AND', agg: '', col: '', fn: '', args: [], op: '=', value: '', value2: '' }),
+    order: () => ({ col: '', agg: '', dir: 'ASC' }),
+    variable: () => ({ name: '', type: 'int', value: '' }),
+    ref: () => '',
+  };
 
   const state = {
     schema: load(STORE.schema) || demoSchema(),
-    query: load(STORE.query) || emptyQuery(),
+    query: Object.assign(emptyQuery(), load(STORE.query) || {}),
     filter: '',
     expanded: {},
     suggestions: [],
@@ -96,16 +115,34 @@
   function useColumn(key, col) {
     const inst = instances().find(i => i.table === key);
     const alias = inst ? inst.alias : useTable(key);
-    state.query.select.push({ col: alias + '.' + col, agg: '', as: '' });
+    state.query.select.push(Object.assign(TEMPLATES.column(), { col: alias + '.' + col }));
   }
 
-  // Calls fn(obj, prop) for every column-reference property in the query.
-  function eachRef(fn) {
-    const q = state.query;
-    q.select.forEach(s => fn(s, 'col'));
-    q.where.forEach(w => fn(w, 'col'));
-    q.orderBy.forEach(o => fn(o, 'col'));
-    q.joins.forEach(j => j.on.forEach(o => { fn(o, 'l'); fn(o, 'r'); }));
+  // Properties that hold an "alias.Column" reference, and those that hold free-form SQL.
+  const REF_KEYS = new Set(['col', 'l', 'r', 'aggOrderCol', 'wOrderCol', 'orderCol']);
+
+  // Calls fn(container, key) for every column reference in the query (including the
+  // entries of `partition` arrays), and rawFn(container, key) for free-form SQL text.
+  function eachRef(fn, rawFn) {
+    const visit = obj => {
+      if (!obj || typeof obj !== 'object') return;
+      Object.keys(obj).forEach(k => {
+        const v = obj[k];
+        if (typeof v === 'string') {
+          if (REF_KEYS.has(k)) fn(obj, k);
+          else if (rawFn && (k === 'expr' || (k === 'value' && Sql.RAW_VALUE_OPS.has(obj.op)))) rawFn(obj, k);
+        } else if (k === 'partition' && Array.isArray(v)) {
+          v.forEach((_, i) => fn(v, i));
+        } else {
+          visit(v);
+        }
+      });
+    };
+    visit(state.query.select);
+    visit(state.query.where);
+    visit(state.query.orderBy);
+    visit(state.query.joins);
+    visit(state.query.dedupe);
   }
 
   function renameAlias(oldAlias, raw) {
@@ -115,8 +152,11 @@
     const q = state.query;
     if (q.from.alias === oldAlias) q.from.alias = alias;
     q.joins.forEach(j => { if (j.alias === oldAlias) j.alias = alias; });
+    const re = new RegExp('(^|[^\\w@#.])' + oldAlias + '\\.', 'g');
     eachRef((obj, prop) => {
       if (obj[prop] && obj[prop].startsWith(oldAlias + '.')) obj[prop] = alias + obj[prop].slice(oldAlias.length);
+    }, (obj, prop) => {
+      obj[prop] = obj[prop].replace(re, (m, pre) => pre + alias + '.');
     });
     return true;
   }
@@ -126,10 +166,10 @@
     const alias = q.joins[index].alias;
     q.joins.splice(index, 1);
     const uses = ref => ref && ref.startsWith(alias + '.');
-    q.select = q.select.filter(s => !uses(s.col));
+    q.select = q.select.filter(s => Sql.itemKind(s) !== 'column' || !uses(s.col));
     q.where = q.where.filter(w => !uses(w.col));
     q.orderBy = q.orderBy.filter(o => !uses(o.col));
-    q.joins.forEach(j => j.on.forEach(o => { if (uses(o.l)) o.l = ''; if (uses(o.r)) o.r = ''; }));
+    eachRef((obj, prop) => { if (uses(obj[prop])) obj[prop] = ''; });
   }
 
   // ---------- Rendering ----------
@@ -138,9 +178,20 @@
     return list.map(([v, label]) => `<option value="${esc(v)}"${v === selected ? ' selected' : ''}>${esc(label)}</option>`).join('');
   }
 
-  function columnOptions(selected, { star = false, placeholder = 'Choose column…' } = {}) {
+  function columnOptions(selected, { star = false, outputs = false, placeholder = 'Choose column…' } = {}) {
     let html = `<option value="">${esc(placeholder)}</option>`;
     if (star) html += `<option value="*"${selected === '*' ? ' selected' : ''}>* (all columns)</option>`;
+    if (outputs) {
+      // Named output columns (calculated, CASE, window …) can be sorted on by name.
+      const names = state.query.select.filter(it => Sql.itemKind(it) !== 'column' || it.agg || it.fn)
+        .map(it => it.as && it.as.trim()).filter(Boolean);
+      if (names.length) {
+        html += '<optgroup label="Output columns">' + names.map(n => {
+          const v = 'out:' + n;
+          return `<option value="${esc(v)}"${selected === v ? ' selected' : ''}>${esc(n)}</option>`;
+        }).join('') + '</optgroup>';
+      }
+    }
     instances().forEach(inst => {
       const t = tableOf(inst.table);
       html += `<optgroup label="${esc(inst.alias + ' — ' + displayName(inst.table))}">`;
@@ -212,7 +263,6 @@
 
     state.suggestions = joinSuggestions();
     const joinTypes = Sql.JOIN_TYPES.map(t => [t, t + ' JOIN']);
-    const aggs = Sql.AGGREGATES;
 
     const tablesCard = `<div class="card">
       <div class="card-head"><h3>Tables</h3></div>
@@ -248,7 +298,155 @@
       </div>
     </div>`;
 
-    const selectCard = `<div class="card">
+    $('#builder').innerHTML = tablesCard + selectCard(q) + filterCard(q) + orderCard(q) + advancedCard(q);
+  }
+
+  const DIRS = [['ASC', 'Ascending'], ['DESC', 'Descending']];
+
+  // Function dropdown plus inputs for the chosen function's arguments.
+  function fnPicker(path, src) {
+    let groups = '';
+    let current = '';
+    Sql.FUNCTIONS.forEach(f => {
+      if (f.group !== current) {
+        groups += (current ? '</optgroup>' : '') + `<optgroup label="${esc(f.group)}">`;
+        current = f.group;
+      }
+      groups += `<option value="${esc(f.id)}"${src.fn === f.id ? ' selected' : ''}>${esc(f.label)}</option>`;
+    });
+    let html = `<select class="fn" data-path="${path}.fn" title="Apply a function to the column">
+      <option value="">ƒ none</option>${groups}</optgroup></select>`;
+    const f = src.fn && Sql.FUNCTIONS.find(x => x.id === src.fn);
+    (f && f.args || []).forEach((a, i) => {
+      const v = (src.args || [])[i];
+      const val = v == null || v === '' ? (a.def || '') : v;
+      const p = `${path}.args.${i}`;
+      if (a.kind === 'datepart') {
+        html += `<select data-path="${p}" title="${esc(a.label)}">${options(Sql.DATE_PARTS.map(d => [d, d]), val)}</select>`;
+      } else if (a.kind === 'style') {
+        html += `<select data-path="${p}" title="${esc(a.label)}">${options(Sql.DATE_STYLES.map(([k, l]) => [k, l]), val)}</select>`;
+      } else {
+        html += `<input class="${a.kind === 'int' ? 'num' : 'value'}" placeholder="${esc(a.label)}" title="${esc(a.label)}"
+          data-path="${p}" value="${esc(val)}">`;
+      }
+    });
+    return html;
+  }
+
+  function itemControls(i) {
+    return `<span class="controls"><button class="icon" data-action="move" data-list="select" data-index="${i}" data-dir="-1" title="Move up">↑</button>
+      <button class="icon" data-action="move" data-list="select" data-index="${i}" data-dir="1" title="Move down">↓</button>
+      <button class="icon" data-action="remove" data-list="select" data-index="${i}" title="Remove">✕</button></span>`;
+  }
+
+  function asInput(path, value, placeholder = 'alias (optional)') {
+    return `<span class="as-group"><span class="muted">AS</span><input class="as" placeholder="${esc(placeholder)}" data-path="${path}.as" value="${esc(value)}"></span>`;
+  }
+
+  // Column / operator / value inputs shared by filters and CASE conditions.
+  function conditionInputs(path, w, { aggs = null } = {}) {
+    const noCol = Sql.NO_COLUMN_OPS.has(w.op);
+    const noValue = Sql.NO_VALUE_OPS.has(w.op);
+    const raw = Sql.RAW_VALUE_OPS.has(w.op);
+    const placeholder = w.op === 'custom' ? 'raw SQL, e.g. (a.X = 1 OR a.Y = 2)'
+      : raw ? 'SELECT x.[Id] FROM [dbo].[Table] AS x WHERE …'
+        : (w.op === 'IN' || w.op === 'NOT IN') ? 'a, b, c' : 'value, @var or =SQL';
+    return `${noCol ? '' : `${aggs ? `<select data-path="${path}.agg" title="Aggregate (makes this a HAVING filter)">${options(aggs, w.agg)}</select>` : ''}
+        <select class="col" data-path="${path}.col">${columnOptions(w.col)}</select>
+        ${fnPicker(path, w)}`}
+      <select data-path="${path}.op">${options(Sql.OPERATORS.map(o => [o, o]), w.op)}</select>
+      ${noValue ? '' : `<input class="value${raw ? ' wide' : ''}" placeholder="${esc(placeholder)}" data-path="${path}.value" value="${esc(w.value)}">`}
+      ${w.op === 'BETWEEN' ? `<span class="muted">and</span><input class="value" data-path="${path}.value2" value="${esc(w.value2)}">` : ''}`;
+  }
+
+  function columnItem(s, i) {
+    const p = `select.${i}`;
+    let html = `<div class="item"><div class="row">
+      <select data-path="${p}.agg" title="Aggregate">${options(Sql.AGGREGATES, s.agg)}</select>
+      <select class="col" data-path="${p}.col">${columnOptions(s.col, { star: true })}</select>
+      ${fnPicker(p, s)}
+      ${asInput(p, s.as)}
+      ${itemControls(i)}
+    </div>`;
+    if (s.agg === 'STRING_AGG') {
+      html += `<div class="row sub">
+        <span class="muted">separator</span>
+        <input class="sep" data-path="${p}.sep" value="${esc(s.sep == null ? ', ' : s.sep)}" title="Text placed between values">
+        <label class="muted"><input type="checkbox" data-path="${p}.distinct"${s.distinct ? ' checked' : ''}> distinct values only</label>
+        ${s.distinct ? '<span class="muted">(sorted by value)</span>' : `<span class="muted">order by</span>
+          <select class="col" data-path="${p}.aggOrderCol">${columnOptions(s.aggOrderCol, { placeholder: '(any order)' })}</select>
+          <select data-path="${p}.aggOrderDir">${options(DIRS, s.aggOrderDir)}</select>`}
+      </div>`;
+    }
+    return html + '</div>';
+  }
+
+  function exprItem(s, i) {
+    const p = `select.${i}`;
+    return `<div class="item"><div class="row">
+      <span class="tag">ƒx</span>
+      <input class="expr" placeholder="SQL expression, e.g. CONCAT(c.[FirstName], ' ', c.[LastName])" data-path="${p}.expr" value="${esc(s.expr)}">
+      <label class="muted" title="Tick if the expression uses SUM/COUNT/… so it's left out of GROUP BY">
+        <input type="checkbox" data-path="${p}.isAgg"${s.isAgg ? ' checked' : ''}> aggregate</label>
+      ${asInput(p, s.as, 'name')}
+      ${itemControls(i)}
+    </div></div>`;
+  }
+
+  function caseItem(s, i) {
+    const p = `select.${i}`;
+    return `<div class="item"><div class="row">
+        <span class="tag">CASE</span>
+        ${asInput(p, s.as, 'name')}
+        ${itemControls(i)}
+      </div>
+      ${(s.whens || []).map((w, wi) => `<div class="row sub">
+        <span class="kw">WHEN</span>
+        ${conditionInputs(`${p}.whens.${wi}`, w)}
+        <span class="kw">THEN</span>
+        <input class="value" placeholder="result" data-path="${p}.whens.${wi}.then" value="${esc(w.then)}">
+        ${s.whens.length > 1 ? `<button class="icon" data-action="remove-at" data-path="${p}.whens" data-index="${wi}" title="Remove">✕</button>` : ''}
+      </div>`).join('')}
+      <div class="row sub">
+        <button class="link" data-action="add-to" data-path="${p}.whens" data-template="when">+ WHEN</button>
+        <span class="kw">ELSE</span>
+        <input class="value" placeholder="(NULL)" data-path="${p}.else" value="${esc(s.else)}">
+      </div>
+    </div>`;
+  }
+
+  function partitionInputs(path, list) {
+    const items = list && list.length ? list : [''];
+    return items.map((c, ci) => `<select class="col" data-path="${path}.${ci}">${columnOptions(c, { placeholder: '(none)' })}</select>
+      ${items.length > 1 ? `<button class="icon" data-action="remove-at" data-path="${path}" data-index="${ci}" title="Remove">✕</button>` : ''}`).join('')
+      + `<button class="link" data-action="add-to" data-path="${path}" data-template="ref" title="Add another column">+</button>`;
+  }
+
+  function windowItem(s, i) {
+    const p = `select.${i}`;
+    const w = Sql.WINDOW_FUNCTIONS.find(x => x.id === s.wfn) || Sql.WINDOW_FUNCTIONS[0];
+    const wholeGroup = w.agg && s.frame !== 'running';
+    return `<div class="item"><div class="row">
+        <span class="tag">OVER</span>
+        <select data-path="${p}.wfn">${options(Sql.WINDOW_FUNCTIONS.map(x => [x.id, x.label]), s.wfn)}</select>
+        ${w.col ? `<select class="col" data-path="${p}.col">${columnOptions(s.col)}</select>` : ''}
+        ${w.n ? `<input class="num" data-path="${p}.n" placeholder="${esc(w.def)}" value="${esc(s.n)}" title="${w.id === 'NTILE' ? 'Number of buckets' : 'Rows back/forward'}">` : ''}
+        ${w.agg ? `<select data-path="${p}.frame">${options([['running', 'running total'], ['partition', 'total for whole group']], s.frame)}</select>` : ''}
+        ${asInput(p, s.as, 'name')}
+        ${itemControls(i)}
+      </div>
+      <div class="row sub">
+        <span class="muted">per group of</span> ${partitionInputs(`${p}.partition`, s.partition)}
+        ${wholeGroup ? '' : `<span class="muted">ordered by</span>
+          <select class="col" data-path="${p}.wOrderCol">${columnOptions(s.wOrderCol)}</select>
+          <select data-path="${p}.wOrderDir">${options(DIRS, s.wOrderDir)}</select>`}
+      </div>
+    </div>`;
+  }
+
+  function selectCard(q) {
+    const render = { column: columnItem, expr: exprItem, case: caseItem, window: windowItem };
+    return `<div class="card">
       <div class="card-head">
         <h3>Columns <span class="muted">(SELECT)</span></h3>
         <div class="opts">
@@ -257,59 +455,94 @@
         </div>
       </div>
       ${q.select.length ? '' : '<p class="placeholder">No columns chosen — all columns (*) will be returned. Click columns in the schema panel or add them here.</p>'}
-      ${q.select.map((s, i) => `<div class="row">
-        <select data-path="select.${i}.agg" title="Aggregate">${options(aggs, s.agg)}</select>
-        <select class="col" data-path="select.${i}.col">${columnOptions(s.col, { star: true })}</select>
-        <span class="muted">AS</span><input class="as" placeholder="alias (optional)" data-path="select.${i}.as" value="${esc(s.as)}">
-        <button class="icon" data-action="move" data-list="select" data-index="${i}" data-dir="-1" title="Move up">↑</button>
-        <button class="icon" data-action="move" data-list="select" data-index="${i}" data-dir="1" title="Move down">↓</button>
-        <button class="icon" data-action="remove" data-list="select" data-index="${i}" title="Remove">✕</button>
-      </div>`).join('')}
-      <div class="btn-row">
-        <button class="link" data-action="add-select">+ column</button>
-        <button class="link" data-action="add-count">+ COUNT(*)</button>
+      ${q.select.map((s, i) => render[Sql.itemKind(s)](s, i)).join('')}
+      <div class="btn-row adders">
+        <button class="link" data-action="add-item" data-template="column">+ column</button>
+        <button class="link" data-action="add-item" data-template="count">+ COUNT(*)</button>
+        <button class="link" data-action="add-item" data-template="concat" title="Combine the values from many rows into one comma-separated list per group">+ concatenate values</button>
+        <button class="link" data-action="add-item" data-template="case" title="Return different values depending on conditions">+ CASE</button>
+        <button class="link" data-action="add-item" data-template="window" title="Row numbers, rankings, running totals, previous/next row values">+ window function</button>
+        <button class="link" data-action="add-item" data-template="expr" title="Type any SQL expression">+ calculated</button>
       </div>
-      ${q.select.some(s => s.agg) ? '<p class="hint">Non-aggregated columns are added to GROUP BY automatically.</p>' : ''}
+      ${q.select.some(s => s.agg || s.isAgg) ? '<p class="hint">Non-aggregated columns are added to GROUP BY automatically. “Concatenate values” joins the values from all rows in each group into one text value.</p>' : ''}
     </div>`;
+  }
 
-    const filterCard = `<div class="card">
+  function filterCard(q) {
+    return `<div class="card">
       <div class="card-head"><h3>Filters <span class="muted">(WHERE / HAVING)</span></h3></div>
       ${q.where.length ? '' : '<p class="placeholder">No filters. Filters with an aggregate (e.g. COUNT &gt; 5) become HAVING.</p>'}
-      ${q.where.map((w, i) => {
-        const noValue = Sql.NO_VALUE_OPS.has(w.op);
-        const custom = w.op === 'custom';
-        const placeholder = custom ? "raw SQL, e.g. (a.X = 1 OR a.Y = 2)"
-          : (w.op === 'IN' || w.op === 'NOT IN') ? 'a, b, c' : 'value or @param';
-        return `<div class="row">
-          ${i ? `<select data-path="where.${i}.conj">${options([['AND', 'AND'], ['OR', 'OR']], w.conj)}</select>` : '<span class="kw">WHERE</span>'}
-          ${custom ? '' : `<select data-path="where.${i}.agg" title="Aggregate (makes this a HAVING filter)">${options(aggs, w.agg)}</select>
-          <select class="col" data-path="where.${i}.col">${columnOptions(w.col)}</select>`}
-          <select data-path="where.${i}.op">${options(Sql.OPERATORS.map(o => [o, o]), w.op)}</select>
-          ${noValue ? '' : `<input class="value" placeholder="${esc(placeholder)}" data-path="where.${i}.value" value="${esc(w.value)}"${custom ? ' style="width:280px"' : ''}>`}
-          ${w.op === 'BETWEEN' ? `<span class="muted">and</span><input class="value" data-path="where.${i}.value2" value="${esc(w.value2)}">` : ''}
-          <button class="icon" data-action="remove" data-list="where" data-index="${i}" title="Remove">✕</button>
-        </div>`;
-      }).join('')}
-      <button class="link" data-action="add-where">+ filter</button>
+      ${q.where.map((w, i) => `<div class="row">
+        ${i ? `<select data-path="where.${i}.conj">${options([['AND', 'AND'], ['OR', 'OR']], w.conj)}</select>` : '<span class="kw">WHERE</span>'}
+        ${conditionInputs(`where.${i}`, w, { aggs: Sql.FILTER_AGGREGATES })}
+        <button class="icon" data-action="remove" data-list="where" data-index="${i}" title="Remove">✕</button>
+      </div>`).join('')}
+      <button class="link" data-action="add-to" data-path="where" data-template="filter">+ filter</button>
+      ${q.where.length ? '<p class="hint">Start a value with <code>=</code> to type raw SQL, e.g. <code>=DATEADD(day, -30, GETDATE())</code>. Use <code>@name</code> for a variable.</p>' : ''}
     </div>`;
+  }
 
-    const orderCard = `<div class="card">
+  function orderCard(q) {
+    return `<div class="card">
       <div class="card-head"><h3>Sort <span class="muted">(ORDER BY)</span></h3></div>
       ${q.orderBy.map((o, i) => `<div class="row">
-        <select data-path="orderBy.${i}.agg" title="Aggregate">${options(aggs, o.agg)}</select>
-        <select class="col" data-path="orderBy.${i}.col">${columnOptions(o.col)}</select>
-        <select data-path="orderBy.${i}.dir">${options([['ASC', 'Ascending'], ['DESC', 'Descending']], o.dir)}</select>
+        ${o.col && o.col.startsWith('out:') ? '' : `<select data-path="orderBy.${i}.agg" title="Aggregate">${options(Sql.FILTER_AGGREGATES, o.agg)}</select>`}
+        <select class="col" data-path="orderBy.${i}.col">${columnOptions(o.col, { outputs: true })}</select>
+        <select data-path="orderBy.${i}.dir">${options(DIRS, o.dir)}</select>
         <button class="icon" data-action="move" data-list="orderBy" data-index="${i}" data-dir="-1" title="Move up">↑</button>
         <button class="icon" data-action="remove" data-list="orderBy" data-index="${i}" title="Remove">✕</button>
       </div>`).join('')}
-      <button class="link" data-action="add-order">+ sort</button>
+      <button class="link" data-action="add-to" data-path="orderBy" data-template="order">+ sort</button>
     </div>`;
+  }
 
-    $('#builder').innerHTML = tablesCard + selectCard + filterCard + orderCard;
+  function advancedCard(q) {
+    const dd = q.dedupe;
+    return `<details class="card advanced"${state.advancedOpen ? ' open' : ''}>
+      <summary><h3>Advanced options</h3></summary>
+      <div class="adv-grid">
+        <label for="adv-version">SQL Server version</label>
+        <div><select id="adv-version" data-path="version">${options([['2017', '2017 or later'], ['2016', '2016 or earlier']], q.version)}</select>
+          <span class="hint">Older versions get equivalent SQL without STRING_AGG / TRIM.</span></div>
+
+        <label>Keep first row per group</label>
+        <div>
+          <label><input type="checkbox" data-path="dedupe.on"${dd.on ? ' checked' : ''}> only one row for each</label>
+          ${dd.on ? `<div class="row sub">${partitionInputs('dedupe.partition', dd.partition)}</div>
+            <div class="row sub"><span class="muted">keep the row with the</span>
+              <select data-path="dedupe.orderDir">${options([['DESC', 'highest / latest'], ['ASC', 'lowest / earliest']], dd.orderDir)}</select>
+              <select class="col" data-path="dedupe.orderCol">${columnOptions(dd.orderCol)}</select></div>` : ''}
+          <span class="hint">e.g. each customer's most recent order. Uses ROW_NUMBER() in a CTE.</span>
+        </div>
+
+        <label for="adv-rollup">Subtotals</label>
+        <div><label><input id="adv-rollup" type="checkbox" data-path="rollup"${q.rollup ? ' checked' : ''}> add subtotal and grand-total rows (GROUP BY ROLLUP)</label></div>
+
+        <label for="adv-offset">Skip rows</label>
+        <div><input id="adv-offset" type="number" min="0" placeholder="0" data-path="offset" value="${esc(q.offset)}">
+          <span class="hint">Paging: OFFSET … ROWS; TOP becomes FETCH NEXT.</span></div>
+
+        <label for="adv-into">Save into table</label>
+        <div><input id="adv-into" placeholder="#Results" data-path="into" value="${esc(q.into)}">
+          <span class="hint">SELECT … INTO a temp table (#name) to use in later steps of a script.</span></div>
+
+        <label>Variables</label>
+        <div>
+          ${q.vars.map((v, i) => `<div class="row">
+            <span class="kw">@</span><input class="var-name" placeholder="name" data-path="vars.${i}.name" value="${esc(v.name)}">
+            <input class="var-type" placeholder="type" data-path="vars.${i}.type" value="${esc(v.type)}" title="e.g. int, date, nvarchar(50)">
+            <span>=</span><input class="value" placeholder="value" data-path="vars.${i}.value" value="${esc(v.value)}">
+            <button class="icon" data-action="remove" data-list="vars" data-index="${i}" title="Remove">✕</button>
+          </div>`).join('')}
+          <button class="link" data-action="add-to" data-path="vars" data-template="variable">+ variable</button>
+          <span class="hint">DECLARE @name at the top; use @name in filters.</span>
+        </div>
+      </div>
+    </details>`;
   }
 
   function highlight(sql) {
-    const re = /(--[^\n]*)|('(?:[^']|'')*')|(\[(?:[^\]]|\]\])*\])|(\b\d+(?:\.\d+)?\b)|(\b(?:SELECT|DISTINCT|TOP|FROM|AS|INNER|LEFT|RIGHT|FULL|OUTER|CROSS|JOIN|ON|AND|OR|NOT|WHERE|GROUP|BY|HAVING|ORDER|ASC|DESC|IN|LIKE|BETWEEN|IS|NULL|COUNT|SUM|AVG|MIN|MAX)\b)/g;
+    const re = /(--[^\n]*)|('(?:[^']|'')*')|(\[(?:[^\]]|\]\])*\])|(\b\d+(?:\.\d+)?\b)|(\b(?:SELECT|DISTINCT|TOP|FROM|AS|INNER|LEFT|RIGHT|FULL|OUTER|CROSS|JOIN|ON|AND|OR|NOT|WHERE|GROUP|BY|HAVING|ORDER|ASC|DESC|IN|LIKE|BETWEEN|IS|NULL|COUNT|SUM|AVG|MIN|MAX|CASE|WHEN|THEN|ELSE|END|OVER|PARTITION|WITH|INTO|DECLARE|ROWS|OFFSET|FETCH|NEXT|ONLY|ROLLUP|EXISTS|STRING_AGG|WITHIN|CAST|AS|DROP|TABLE|IF|UNBOUNDED|PRECEDING|FOLLOWING|CURRENT|ROW|FOR|XML|PATH|TYPE)\b)/g;
     let out = '';
     let last = 0;
     sql.replace(re, (m, comment, str, id, num, kw, offset) => {
@@ -382,10 +615,18 @@
     toast(msg);
   }
 
+  function getPath(obj, path) {
+    return path.split('.').reduce((o, p) => (o == null ? o : o[p]), obj);
+  }
+
+  // Sets a nested value, creating missing arrays/objects on the way (e.g. "select.0.args.1").
   function setPath(obj, path, value) {
     const parts = path.split('.');
     const last = parts.pop();
-    parts.forEach(p => { obj = obj[p]; });
+    parts.forEach((p, i) => {
+      if (obj[p] == null) obj[p] = /^\d+$/.test(parts[i + 1] || last) ? [] : {};
+      obj = obj[p];
+    });
     obj[last] = value;
   }
 
@@ -408,10 +649,14 @@
       if (s) addJoin(s.table, s);
       renderAll();
     },
-    'add-select': () => { state.query.select.push({ col: '', agg: '', as: '' }); renderAll(); },
-    'add-count': () => { state.query.select.push({ col: '*', agg: 'COUNT', as: 'RowCount' }); renderAll(); },
-    'add-where': () => { state.query.where.push({ conj: 'AND', agg: '', col: '', op: '=', value: '', value2: '' }); renderAll(); },
-    'add-order': () => { state.query.orderBy.push({ col: '', agg: '', dir: 'ASC' }); renderAll(); },
+    'add-item': el => { state.query.select.push(TEMPLATES[el.dataset.template]()); renderAll(); },
+    'add-to': el => {
+      let list = getPath(state.query, el.dataset.path);
+      if (!Array.isArray(list)) { list = []; setPath(state.query, el.dataset.path, list); }
+      list.push(TEMPLATES[el.dataset.template]());
+      renderAll();
+    },
+    'remove-at': el => { getPath(state.query, el.dataset.path).splice(+el.dataset.index, 1); renderAll(); },
     'remove': el => { state.query[el.dataset.list].splice(+el.dataset.index, 1); renderAll(); },
     'move': el => {
       const list = state.query[el.dataset.list];
@@ -506,11 +751,26 @@
       return;
     }
     if (el.dataset.path) {
-      setPath(state.query, el.dataset.path, el.type === 'checkbox' ? el.checked : el.value);
-      if (el.tagName === 'SELECT' || el.type === 'checkbox') renderAll();
+      const path = el.dataset.path;
+      setPath(state.query, path, el.type === 'checkbox' ? el.checked : el.value);
+      // A different function takes different arguments: reset them to the defaults.
+      if (path.endsWith('.fn')) setPath(state.query, path.replace(/fn$/, 'args'), []);
+      // Changing a filter's operator: subquery/custom values aren't meaningful as plain values.
+      if (path.endsWith('.op')) {
+        const row = getPath(state.query, path.replace(/\.op$/, ''));
+        if (Sql.NO_COLUMN_OPS.has(row.op)) { row.agg = ''; row.fn = ''; }
+      }
+      // Renaming an output column changes the sort choices, but only rebuild the form when
+      // needed so the next click isn't lost.
+      const renamed = path.endsWith('.as') && state.query.orderBy.length;
+      if (el.tagName === 'SELECT' || el.type === 'checkbox' || renamed) renderAll();
       else renderSql();
     }
   });
+
+  document.addEventListener('toggle', e => {
+    if (e.target.classList && e.target.classList.contains('advanced')) state.advancedOpen = e.target.open;
+  }, true);
 
   // Text inputs update the SQL as you type without rebuilding the form (keeps focus).
   document.addEventListener('input', e => {
