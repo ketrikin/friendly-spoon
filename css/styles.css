@@ -41,6 +41,7 @@
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 body { margin: 0; background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; }
 h1, h2, h3 { margin: 0; }
 h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
@@ -66,11 +67,25 @@ kbd { border: 1px solid var(--border); border-radius: 4px; padding: 0 4px; font-
 }
 .topbar h1 { font-size: 17px; }
 .topbar .sub { font-weight: 400; color: var(--muted); font-size: 13px; }
-.topbar nav { display: flex; gap: 8px; flex-wrap: wrap; }
+.topbar nav { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.conn { color: var(--muted); font-size: 13px; display: inline-flex; align-items: center; gap: 6px; }
+.conn::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--border); }
+.conn.on { color: var(--text); }
+.conn.on::before { background: #12b76a; }
+#db-select { max-width: 200px; }
 
 .layout {
   flex: 1; min-height: 0;
   display: grid; grid-template-columns: 270px minmax(380px, 1fr) minmax(320px, 0.8fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-areas: "schema builder sql" "schema results results";
+}
+.schema-pane { grid-area: schema; }
+.builder-pane { grid-area: builder; }
+.sql-pane { grid-area: sql; }
+.results-pane {
+  grid-area: results; height: 42vh; min-height: 140px; resize: vertical;
+  background: var(--panel); border-top: 1px solid var(--border); display: flex; flex-direction: column; padding-bottom: 0;
 }
 .pane { min-height: 0; overflow: auto; padding: 12px 14px; }
 .schema-pane { background: var(--panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 0; }
@@ -83,7 +98,8 @@ kbd { border: 1px solid var(--border); border-radius: 4px; padding: 0 4px; font-
 
 @media (max-width: 1000px) {
   body { height: auto; }
-  .layout { grid-template-columns: 1fr; }
+  .layout { grid-template-columns: 1fr; grid-template-rows: auto; grid-template-areas: "schema" "builder" "sql" "results"; }
+  .results-pane { height: 60vh; }
   .schema-pane { max-height: 40vh; border-right: none; border-bottom: 1px solid var(--border); }
   .sql-pane { border-left: none; border-top: 1px solid var(--border); }
 }
@@ -165,3 +181,28 @@ dialog::backdrop { background: rgba(0, 0, 0, .4); }
   position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
   background: var(--text); color: var(--panel); padding: 8px 14px; border-radius: 6px; font-size: 13px;
 }
+
+/* Results grid */
+.results-meta { flex: 1; color: var(--muted); font-size: 13px; }
+.results-meta.err { color: var(--danger); }
+.results { flex: 1; min-height: 0; overflow: auto; border: 1px solid var(--border); border-radius: 6px 6px 0 0; }
+.grid { border-collapse: collapse; font-size: 12.5px; font-family: ui-monospace, Consolas, monospace; }
+.grid th, .grid td {
+  border-right: 1px solid var(--border); border-bottom: 1px solid var(--border);
+  padding: 3px 8px; white-space: nowrap; max-width: 360px; overflow: hidden; text-overflow: ellipsis; text-align: left;
+}
+.grid th { position: sticky; top: 0; background: var(--code-bg); font-family: system-ui, sans-serif; font-weight: 600; z-index: 1; }
+.grid th .t { display: block; font-weight: 400; color: var(--muted); font-size: 10.5px; }
+.grid td.num { text-align: right; }
+.grid td.null { color: var(--muted); font-style: italic; }
+.grid .rn { color: var(--muted); text-align: right; background: var(--code-bg); position: sticky; left: 0; }
+.grid tbody tr:hover td { background: var(--accent-soft); }
+.results .message { padding: 14px; }
+.results .message.err { color: var(--danger); white-space: pre-wrap; font-family: ui-monospace, Consolas, monospace; }
+
+/* Connect dialog */
+.form-grid { display: grid; grid-template-columns: 130px 1fr; gap: 8px 12px; align-items: center; margin: 12px 0; }
+.form-grid input, .form-grid select { width: 100%; }
+.form-grid .checks { display: flex; gap: 16px; flex-wrap: wrap; color: var(--muted); }
+.form-grid .checks input { width: auto; }
+code { font-family: ui-monospace, Consolas, monospace; font-size: 12px; background: var(--code-bg); padding: 1px 4px; border-radius: 4px; }

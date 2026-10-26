@@ -57,12 +57,19 @@ ORDER BY s.name, o.name, c.column_id;`;
     } else {
       FIELDS.forEach((f, i) => { idx[f] = i; });
     }
-    const get = (r, f) => {
-      const i = idx[f];
-      if (i == null || i < 0 || i >= r.length) return '';
-      return r[i] === 'NULL' ? '' : r[i];
-    };
+    return schemaFromRows(rows.map(r => {
+      const obj = {};
+      FIELDS.forEach(f => {
+        const i = idx[f];
+        obj[f] = i == null || i < 0 || i >= r.length || r[i] === 'NULL' ? '' : r[i];
+      });
+      return obj;
+    }));
+  }
 
+  // rows: objects keyed by FIELDS, e.g. straight from running SCHEMA_QUERY on the server.
+  function schemaFromRows(rows) {
+    const get = (r, f) => (r[f] == null ? '' : String(r[f]));
     const tables = {};
     for (const r of rows) {
       const schema = get(r, 'schema') || 'dbo';
@@ -136,7 +143,7 @@ ORDER BY s.name, o.name, c.column_id;`;
     return { tables };
   }
 
-  const api = { SCHEMA_QUERY, parseSchemaText, relationships, demoSchema };
+  const api = { SCHEMA_QUERY, FIELDS, parseSchemaText, schemaFromRows, relationships, demoSchema };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.SchemaTools = api;
 })(this);
