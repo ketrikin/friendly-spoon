@@ -14,30 +14,50 @@ The page fetches Python itself (Pyodide, about 10 MB, cached after the first vis
 
 ## Features
 
-- **Full CPython 3.13 standard library**: `sqlite3`, `json`, `csv`, `re`, `datetime`, `asyncio`, `dataclasses`, `decimal` and more.
-- **Editor**: syntax highlighting, autocompletion (jedi, Ctrl+Space, or automatic after `.`), bracket matching, find/replace, multi-cursor, and comment toggling.
-- **Multiple files**: create, rename and delete tabs. Files can `import` each other, and edits are picked up on each run.
-- **Interactive console** (`>>>`):
-  - continuation lines, history (↑/↓) and tab completion
-  - top-level `await`
-  - it shares the namespace of the last run (like `python -i`)
-  - Shift+Enter in the editor sends the selection or current line to the console
-- **`input()` works**: the program pauses and an input field appears inline in the console.
-- **Stop / Ctrl+C** raises `KeyboardInterrupt` in running code, including `time.sleep`, `input()` and async code. Infinite loops can be interrupted too when hosted with `coi-sw.js` (see below); otherwise Force stop restarts Python.
+Everything is listed in the **command palette** (Ctrl/⌘+Shift+P or F1), and **Settings → Shortcuts** lists the keys.
+
+**Running code**
+- Full CPython 3.13 with its standard library: `sqlite3`, `json`, `csv`, `re`, `datetime`, `asyncio`, `dataclasses`, `decimal` and more.
+- The **Run ▾** menu offers: Run file, Run with arguments (`sys.argv`), Debug, Profile (cProfile table), Run tests (pytest, with a unittest fallback), and Run cell.
+- **Code cells**: put `# %%` between sections and run one with Ctrl/⌘+Shift+Enter, notebook-style.
+- **`input()`** pauses the program and shows an input field inline in the console.
+- **Stop / Ctrl+C** raises `KeyboardInterrupt`, including during `time.sleep`, `input()` and async code. Infinite loops can also be interrupted when hosted with `coi-sw.js`; otherwise Force stop restarts Python.
+
+**Debugger**
+- Click left of a line number (or press F9) to set a breakpoint, then press **F5**. With no breakpoints, it pauses on the first line.
+- Step over, into and out (F10 / F11 / Shift+F11), continue and stop.
+- The Debug panel shows the call stack (click a frame to switch to it), local and global variables, watch expressions, and an evaluate box that runs code in the paused frame.
+- Hovering a name while paused shows its value.
+- Uncaught errors pause at the failing line so you can inspect the variables (post-mortem). In the console, `%debug` inspects the last error.
+
+**Editor and code intelligence**
+- Syntax highlighting, code folding, bracket matching, multi-cursor (sublime keys), find/replace and an optional 79-column ruler.
+- Autocomplete (jedi): Ctrl+Space, or automatic after `.`. Hover docs, signature help as you type `(`, and go to definition (F12 or Ctrl/⌘+click, across files).
+- Find references (Shift+F12) and rename a symbol across the project (F2).
+- **Linting as you type** (syntax errors and pyflakes) with underlines, gutter marks, a Problems panel and a status-bar count.
+- **Format with Black** (Shift+Alt+F), optionally on save.
+- **Navigation**: go to file (Ctrl/⌘+P), go to symbol (Ctrl/⌘+Shift+O), go to line (Ctrl+G), an Outline panel (classes, functions, cells) and find & replace in all files.
+
+**Console**
+- A `>>>` prompt with history, tab completion, continuation lines and top-level `await`. It shares the namespace of the last run (like `python -i`).
+- Magics: `%timeit`, `%time`, `%who`/`%whos`, `%reset`, `%run file.py args`, `%debug`, `%pip`, `%cd`/`%ls`/`%pwd`, `%env`, `%clear` and `%lsmagic`.
+- Help: `obj?` shows help and `obj??` shows source.
+- **Variables panel**: a live table of everything defined; click a row to display it.
 - **Rich output**:
-  - matplotlib plots render inline
-  - pandas DataFrames render as HTML tables
-  - `display()` works on any object with `_repr_html_`, `_repr_png_` or `_repr_svg_` (`from ide import HTML, SVG, Image`)
-  - ANSI colours and `\r` progress bars work (e.g. `rich`)
-- **Packages**:
-  - imports are installed automatically: Pyodide ships numpy, pandas, scipy, scikit-learn, matplotlib, sympy and 300+ others, and anything pure-Python comes from PyPI via micropip
-  - you can also type `pip install x` in the console or use the Packages tab
-- **Files**:
-  - browse the virtual filesystem; upload (or drag and drop) data files
-  - download files your program creates, or the whole project as a .zip
-  - in Chrome or Edge, mount a real folder from your computer
-- **Saved automatically** in your browser (IndexedDB). **Share** copies a link with your code compressed into the URL.
-- Light and dark themes; works on tablets and phones.
+  - matplotlib plots and pandas tables render inline
+  - `display()` shows any object with `_repr_html_`, `_repr_png_` or `_repr_svg_` (`from ide import HTML, SVG, Image`)
+  - ANSI colours and `\r` progress bars work
+  - click an image to download it
+- **Turtle graphics**: `import turtle` draws an animated picture in the console. Keyboard/mouse events aren't supported.
+
+**Packages, files and projects**
+- Imports install automatically. Pyodide ships 300+ prebuilt packages (numpy, pandas, scipy, scikit-learn, matplotlib, sympy and more), and pure-Python packages come from PyPI. You can also use `pip install x` in the console or the Packages panel.
+- Multiple files and folders that can `import` each other, with tabs you can create, rename (double-click) and delete.
+- Upload or drag in files. A `.zip` can be extracted into the project.
+- Download single files or the whole project as a .zip; files your program writes appear in the Files panel.
+- In Chrome or Edge you can mount a real folder.
+- Everything is **saved automatically** in your browser, including breakpoints and watches. **Share** copies a link with the code inside it.
+- Light and dark themes, adjustable font size (Ctrl/⌘ + = / −); works on tablets and phones.
 
 ## Hosting (no install needed)
 
@@ -68,8 +88,10 @@ By default Pyodide loads from the jsDelivr CDN. To use another copy, add `?pyodi
 
 | Path | Purpose |
 | --- | --- |
-| `index.html` | The whole IDE: styles, UI code, console renderer, and embedded `<script type="text/plain">` blocks holding the Web Worker (`#worker-src`) and the Python runtime (`#py-ide`, `#py-ide-mpl`) |
+| `index.html` | The whole IDE. Besides the styles and UI script, it embeds `<script type="text/plain">` blocks: the Web Worker (`#worker-src`) and the Python modules written into Pyodide at startup (`ide.py` runtime, `ide_tools.py` debugger/lint/format/intel/tests/magics, `ide_mpl.py` matplotlib backend, `turtle.py`) |
 | `coi-sw.js` | Optional service worker that enables cross-origin isolation when hosted |
+
+Black, pyflakes and pytest are fetched on first use (from PyPI or Pyodide's CDN), so the first lint or format takes a few seconds longer.
 
 ## Limitations
 
@@ -77,5 +99,6 @@ These come from running Python in a browser sandbox:
 
 - No `subprocess` or `threading`-based parallelism, and `multiprocessing` doesn't work.
 - No raw sockets. Use `pyodide.http.pyfetch`, or `requests` for CORS-enabled URLs.
-- `tkinter` and `turtle` are unavailable; use matplotlib or `display(SVG(...))` instead.
+- `tkinter` is unavailable. `turtle` works, but draws when the program finishes rather than live, and has no keyboard/mouse events.
+- The debugger steps through your project's files; it doesn't step into installed libraries.
 - Packages with C extensions work only if Pyodide has built them.

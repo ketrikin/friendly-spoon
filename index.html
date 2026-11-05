@@ -16,6 +16,7 @@
   <link rel="stylesheet" crossorigin="anonymous" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
   <link rel="stylesheet" crossorigin="anonymous" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.css">
   <link rel="stylesheet" crossorigin="anonymous" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/dialog/dialog.min.css">
+  <link rel="stylesheet" crossorigin="anonymous" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/fold/foldgutter.min.css">
   <style>
 :root {
   --bg: #f6f7f9;
@@ -384,6 +385,146 @@ li.CodeMirror-hint-active .ht { color: inherit; }
   .sep { display: none; }
   #st-cursor { display: none; }
 }
+
+/* ---------- IDE features ---------- */
+.split-btn { display: inline-flex; }
+.split-btn #run-btn { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.split-btn .caret-btn { border-top-left-radius: 0; border-bottom-left-radius: 0; padding: 0 8px; border-left: 1px solid color-mix(in srgb, var(--accent-text) 35%, transparent); }
+.menu.run-menu { left: 0; right: auto; min-width: 260px; }
+.menu .item kbd, .palette kbd { float: right; font-size: 11px; color: var(--muted); margin-left: 12px; }
+.menu .item kbd { margin-top: 1px; }
+
+.debug-bar {
+  display: flex; align-items: center; gap: 4px; flex-wrap: wrap; padding: 4px 8px;
+  background: color-mix(in srgb, var(--warn) 14%, var(--surface)); border-bottom: 1px solid var(--border);
+}
+.debug-bar .dbg-label { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; margin-right: auto; color: var(--text); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.debug-bar .dbg-label svg { width: 15px; height: 15px; flex: none; color: var(--warn); }
+.debug-bar .btn { background: var(--surface); }
+
+/* gutters */
+.cm-breakpoints { width: 16px; }
+.cm-lint-gutter { width: 8px; }
+.bp-dot { width: 10px; height: 10px; border-radius: 50%; background: #e5484d; margin: 4px 0 0 3px; box-shadow: 0 0 0 1px rgba(0,0,0,.15); cursor: pointer; }
+.bp-dot.inline { display: inline-block; margin: 0 8px 0 0; vertical-align: -1px; }
+.CodeMirror-gutter-wrapper:hover .bp-dot { opacity: .8; }
+.cm-breakpoints, .CodeMirror-linenumber { cursor: pointer; }
+.lint-marker { width: 4px; height: 1.2em; margin: 2px 0 0 2px; border-radius: 2px; }
+.lint-marker.error { background: var(--danger); }
+.lint-marker.warning { background: var(--warn); }
+.cm-lint-error { text-decoration: underline wavy var(--danger); text-decoration-skip-ink: none; text-underline-offset: 3px; }
+.cm-lint-warning { text-decoration: underline wavy var(--warn); text-decoration-skip-ink: none; text-underline-offset: 3px; }
+.cm-debug-line { background: color-mix(in srgb, var(--warn) 28%, transparent) !important; }
+.cm-matchhighlight { background: color-mix(in srgb, var(--accent) 18%, transparent); border-radius: 2px; }
+.cm-ruler { border-left: 1px dashed var(--border) !important; }
+.CodeMirror-foldgutter { width: 14px; }
+.CodeMirror-foldgutter-open, .CodeMirror-foldgutter-folded { color: var(--muted); }
+.CodeMirror-foldmarker { color: var(--accent); text-shadow: none; font-family: var(--mono); background: var(--sel); border-radius: 3px; padding: 0 4px; }
+
+/* side tabs */
+.ptabs { gap: 0; }
+.ptab-scroll { display: flex; overflow-x: auto; scrollbar-width: none; min-width: 0; flex: 0 1 auto; }
+.ptab-scroll::-webkit-scrollbar { display: none; }
+.ptab { padding: 0 10px; white-space: nowrap; flex: none; }
+.badge { display: inline-block; min-width: 16px; padding: 0 4px; margin-left: 2px; border-radius: 8px; background: var(--danger); color: #fff; font-size: 10.5px; line-height: 16px; text-align: center; }
+.tool-panel { padding: 10px 12px; font-size: 13px; }
+.tool-panel h4 { margin: 14px 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.tool-panel h4:first-child { margin-top: 2px; }
+.small { font-size: 12px; }
+.panel-tools .filter { margin: 0; flex: 1; }
+
+/* variables tables */
+table.vars { width: 100%; border-collapse: collapse; font: 12.5px var(--mono); table-layout: fixed; }
+table.vars td, table.vars th { padding: 3px 6px; border-bottom: 1px solid var(--border); vertical-align: top; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+table.vars th { text-align: left; font: 600 11.5px var(--sans); color: var(--muted); }
+table.vars .vn { width: 28%; color: var(--tok-def); }
+table.vars .vt { width: 22%; color: var(--muted); }
+table.vars .vs { margin-left: 6px; font-size: 11px; color: var(--sys); }
+table.vars.full .vn { width: 24%; } table.vars.full .vt { width: 16%; } table.vars.full .vs2 { width: 12%; color: var(--muted); }
+table.vars.full tbody tr { cursor: pointer; }
+table.vars tbody tr:hover { background: var(--surface-2); }
+#vars-list { margin-top: 8px; }
+
+/* debug panel */
+.dbg-exc { padding: 8px 10px; border-radius: 6px; background: var(--err-line); color: var(--stderr); font: 12.5px var(--mono); margin-bottom: 4px; white-space: pre-wrap; }
+.dbg-intro p { margin: 4px 0 8px; }
+ol.stack, ul.watches, ul.bplist, ul.outline { list-style: none; margin: 0; padding: 0; }
+ol.stack li, ul.bplist li { display: flex; gap: 10px; padding: 4px 8px; border-radius: 5px; cursor: pointer; font: 12.5px var(--mono); }
+ol.stack li:hover, ul.bplist li:hover, ul.outline li:hover { background: var(--surface-2); }
+ol.stack li.cur { background: var(--sel); }
+ol.stack .loc { color: var(--muted); margin-left: auto; }
+details.globals summary { cursor: pointer; color: var(--muted); font-size: 12px; margin: 8px 0 4px; }
+ul.watches li { display: flex; gap: 8px; align-items: baseline; padding: 3px 4px; font: 12.5px var(--mono); border-bottom: 1px solid var(--border); }
+ul.watches .we { color: var(--tok-def); min-width: 30%; }
+ul.watches .wv { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+ul.watches button { border: 0; background: none; color: var(--muted); cursor: pointer; }
+.wv.err, .evals .err { color: var(--stderr); }
+.evals { max-height: 180px; overflow: auto; font: 12.5px var(--mono); margin-bottom: 6px; }
+.evals > div { padding: 3px 0; border-bottom: 1px dashed var(--border); }
+.evals .p { color: var(--muted); }
+#watch-input, #eval-input { margin-top: 6px; }
+
+/* problems / search results */
+.pgroup { margin-bottom: 10px; }
+.pfile { font: 600 12.5px var(--mono); padding: 4px 0; }
+.pitem { display: flex; align-items: baseline; gap: 8px; padding: 3px 8px; border-radius: 5px; cursor: pointer; }
+.pitem:hover { background: var(--surface-2); }
+.pitem .pmsg { flex: 1; min-width: 0; }
+.pitem .pmsg.code { font: 12.5px var(--mono); white-space: pre; overflow: hidden; text-overflow: ellipsis; }
+.pitem .lnum { min-width: 3ch; text-align: right; font: 12px var(--mono); }
+.pitem mark { background: color-mix(in srgb, var(--warn) 35%, transparent); color: inherit; border-radius: 2px; }
+.sev.error { color: var(--danger); } .sev.warning { color: var(--warn); }
+.search-box { display: grid; gap: 6px; margin-bottom: 8px; }
+.search-box .filter { margin: 0; }
+.search-opts { display: flex; gap: 12px; font: 12px var(--mono); color: var(--muted); }
+.search-opts label { display: inline-flex; gap: 4px; align-items: center; cursor: pointer; }
+.replace-row { display: flex; gap: 6px; }
+.search-title { font-weight: 600; margin: 6px 0; }
+
+/* outline */
+ul.outline li { display: flex; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 5px; cursor: pointer; font: 12.5px var(--mono); }
+.okind { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 4px; font: 700 11px var(--sans); color: #fff; flex: none; }
+.okind.class { background: #b45309; } .okind.def { background: #7c3aed; } .okind.cell { background: #0e7490; }
+
+/* tooltips */
+.tooltip {
+  position: fixed; z-index: 120; max-width: min(560px, calc(100vw - 16px)); max-height: 320px; overflow: auto;
+  background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 8px; box-shadow: var(--shadow);
+  padding: 8px 10px; font-size: 12.5px;
+}
+.tooltip .tip-head { display: flex; gap: 10px; align-items: baseline; }
+.tooltip .tip-head code { font-weight: 600; white-space: pre-wrap; }
+.tooltip .tip-type { color: var(--muted); font-size: 11px; margin-left: auto; }
+.tooltip pre { margin: 6px 0 0; white-space: pre-wrap; font: 12px/1.45 var(--mono); color: var(--text); }
+.tooltip .tip-foot { margin-top: 6px; color: var(--muted); font-size: 11.5px; }
+.tooltip.sig { max-height: 140px; }
+.tooltip.sig code { font: 12.5px var(--mono); }
+.tooltip.sig b { color: var(--accent); }
+.tooltip .tip-doc { margin-top: 4px; color: var(--muted); font-size: 12px; white-space: pre-wrap; }
+
+/* command palette */
+.palette-backdrop { position: fixed; inset: 0; z-index: 150; background: rgba(0, 0, 0, .25); display: flex; justify-content: center; align-items: flex-start; padding: 10vh 16px 0; }
+.palette { width: min(620px, 100%); background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); overflow: hidden; }
+#palette-input { width: 100%; border: 0; border-bottom: 1px solid var(--border); padding: 12px 14px; font-size: 15px; background: transparent; outline: none; }
+.palette-hint { padding: 6px 14px; font-size: 11.5px; color: var(--muted); }
+#palette-list { list-style: none; margin: 0; padding: 0 6px 6px; max-height: 50vh; overflow: auto; }
+#palette-list li { display: flex; justify-content: space-between; align-items: center; padding: 7px 10px; border-radius: 6px; cursor: pointer; }
+#palette-list li.sel { background: var(--accent); color: var(--accent-text); }
+#palette-list li.sel kbd { color: inherit; background: transparent; }
+
+/* status bar extras */
+.st-problems { border: 0; background: none; color: var(--muted); font: inherit; cursor: pointer; padding: 0 4px; }
+.st-problems .err { color: var(--danger); } .st-problems .warn { color: var(--warn); }
+.output img.rich { cursor: pointer; }
+.shortcut-cols { display: flex; gap: 24px; flex-wrap: wrap; }
+.dialog th { text-align: left; padding: 10px 0 4px; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+@media (max-width: 820px) {
+  #debug-btn span { display: none; }
+}
+@media (max-width: 520px) {
+  #share-btn { display: none; }
+  .actions .btn { padding: 0 9px; }
+}
 </style>
 </head>
 <body>
@@ -393,8 +534,22 @@ li.CodeMirror-hint-active .ht { color: inherit; }
       <span class="brand-name">Browser Python</span>
     </div>
     <div class="actions">
-      <button id="run-btn" class="btn primary" title="Run the current file (Ctrl/⌘+Enter)" disabled>
-        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg><span>Run</span>
+      <div class="split-btn menu-wrap">
+        <button id="run-btn" class="btn primary" title="Run the current file (Ctrl/⌘+Enter)" disabled>
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg><span>Run</span>
+        </button>
+        <button id="run-menu-btn" class="btn primary caret-btn" title="More ways to run" aria-haspopup="true" aria-expanded="false">▾</button>
+        <div id="run-menu" class="menu run-menu" role="menu" hidden>
+          <button class="item" data-run="run">Run file<kbd>Ctrl+Enter</kbd></button>
+          <button class="item" data-run="args">Run with arguments…</button>
+          <button class="item" data-run="debug">Debug<kbd>F5</kbd></button>
+          <button class="item" data-run="profile">Profile (cProfile)</button>
+          <button class="item" data-run="tests">Run tests (pytest)</button>
+          <button class="item" data-run="cell">Run cell (# %%)<kbd>Ctrl+Shift+Enter</kbd></button>
+        </div>
+      </div>
+      <button id="debug-btn" class="btn" title="Debug the current file (F5). Click left of the line numbers to set breakpoints." disabled>
+        <svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="5" y="4.5" width="6" height="9" rx="3"/><path d="M8 7.5v6M5 8H2.5M13.5 8H11M5 11.5l-2 1.5M11 11.5l2 1.5M5.5 5 4 3M10.5 5 12 3"/></svg><span>Debug</span>
       </button>
       <button id="stop-btn" class="btn" title="Interrupt (Ctrl+C in the console)" disabled>
         <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3.5" y="3.5" width="9" height="9" rx="1"/></svg><span>Stop</span>
@@ -408,6 +563,9 @@ li.CodeMirror-hint-active .ht { color: inherit; }
         <div id="examples-menu" class="menu" role="menu" hidden></div>
       </div>
       <button id="share-btn" class="btn" title="Copy a link that contains your code">Share</button>
+      <button id="palette-btn" class="btn icon-only" title="Command palette (Ctrl/⌘+Shift+P or F1)">
+        <svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="7" cy="7" r="4.2"/><path d="m10.2 10.2 3.3 3.3"/></svg>
+      </button>
       <div class="menu-wrap">
         <button id="settings-btn" class="btn icon-only" title="Settings" aria-haspopup="true" aria-expanded="false">
           <svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2.5 4.5h11M2.5 11.5h11"/><circle cx="10.5" cy="4.5" r="1.8" fill="var(--surface-2)"/><circle cx="5.5" cy="11.5" r="1.8" fill="var(--surface-2)"/></svg>
@@ -422,6 +580,9 @@ li.CodeMirror-hint-active .ht { color: inherit; }
           <label class="row check"><input type="checkbox" id="set-autoinstall"> <span>Auto-install imported packages</span></label>
           <label class="row check"><input type="checkbox" id="set-clear"> <span>Clear console before each run</span></label>
           <label class="row check"><input type="checkbox" id="set-wrap"> <span>Wrap long lines in editor</span></label>
+          <label class="row check"><input type="checkbox" id="set-lint"> <span>Check code as you type (pyflakes)</span></label>
+          <label class="row check"><input type="checkbox" id="set-fmt"> <span>Format with Black on save</span></label>
+          <label class="row check"><input type="checkbox" id="set-ruler"> <span>Show 79-column ruler</span></label>
           <div class="menu-foot">
             <button id="reset-project" class="btn small danger">Reset project…</button>
             <button id="shortcuts-btn" class="btn small">Shortcuts</button>
@@ -440,6 +601,14 @@ li.CodeMirror-hint-active .ht { color: inherit; }
           <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v8m0 0L5 7m3 3 3-3M3 13h10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
       </div>
+      <div id="debug-bar" class="debug-bar" hidden>
+        <span class="dbg-label"><svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="5" y="4.5" width="6" height="9" rx="3"/><path d="M8 7.5v6M5 8H2.5M13.5 8H11"/></svg><span id="debug-where">Running…</span></span>
+        <button class="btn small" data-cmd="continue" title="Continue (F5)">▶ Continue</button>
+        <button class="btn small" data-cmd="next" title="Step over (F10)">↷ Over</button>
+        <button class="btn small" data-cmd="step" title="Step into (F11)">↓ Into</button>
+        <button class="btn small" data-cmd="return" title="Step out (Shift+F11)">↑ Out</button>
+        <button class="btn small danger" id="debug-stop" title="Stop (Shift+F5)">■ Stop</button>
+      </div>
       <div id="editor" class="editor"></div>
     </section>
 
@@ -447,9 +616,16 @@ li.CodeMirror-hint-active .ht { color: inherit; }
 
     <section class="pane side-pane" aria-label="Output">
       <div class="ptabs" role="tablist">
-        <button class="ptab active" data-panel="console" role="tab">Console</button>
-        <button class="ptab" data-panel="files" role="tab">Files</button>
-        <button class="ptab" data-panel="packages" role="tab">Packages</button>
+        <div class="ptab-scroll">
+          <button class="ptab active" data-panel="console" role="tab">Console</button>
+          <button class="ptab" data-panel="variables" role="tab">Variables</button>
+          <button class="ptab" data-panel="debug" role="tab">Debug</button>
+          <button class="ptab" data-panel="problems" role="tab">Problems <span class="badge" hidden></span></button>
+          <button class="ptab" data-panel="outline" role="tab">Outline</button>
+          <button class="ptab" data-panel="search" role="tab">Search</button>
+          <button class="ptab" data-panel="files" role="tab">Files</button>
+          <button class="ptab" data-panel="packages" role="tab">Packages</button>
+        </div>
         <span class="grow"></span>
         <button id="clear-btn" class="btn small ghost" title="Clear console (Ctrl+L)">Clear</button>
       </div>
@@ -462,6 +638,45 @@ li.CodeMirror-hint-active .ht { color: inherit; }
         </div>
       </div>
 
+      <div id="panel-variables" class="panel tool-panel" hidden>
+        <div class="panel-tools">
+          <input id="vars-filter" class="filter" placeholder="Filter variables…" spellcheck="false">
+          <button id="vars-refresh" class="btn small ghost">Refresh</button>
+        </div>
+        <div id="vars-list"></div>
+      </div>
+
+      <div id="panel-debug" class="panel tool-panel" hidden>
+        <div id="debug-content"></div>
+      </div>
+
+      <div id="panel-problems" class="panel tool-panel" hidden>
+        <div id="problems-list"></div>
+      </div>
+
+      <div id="panel-outline" class="panel tool-panel" hidden>
+        <p class="hint">Symbols in <code id="outline-file"></code> — also <kbd>Ctrl/⌘</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd></p>
+        <ul id="outline-list" class="outline"></ul>
+      </div>
+
+      <div id="panel-search" class="panel tool-panel" hidden>
+        <div class="search-box">
+          <input id="search-input" class="filter" placeholder="Search all files…" spellcheck="false">
+          <div class="search-opts">
+            <label title="Match case"><input type="checkbox" id="search-case"> Aa</label>
+            <label title="Whole word"><input type="checkbox" id="search-word"> \b</label>
+            <label title="Regular expression"><input type="checkbox" id="search-regex"> .*</label>
+          </div>
+          <div class="replace-row">
+            <input id="replace-input" class="filter" placeholder="Replace with…" spellcheck="false">
+            <button id="replace-all" class="btn small">Replace all</button>
+          </div>
+        </div>
+        <div id="search-title" class="search-title" hidden></div>
+        <div id="search-summary" class="muted small"></div>
+        <div id="search-results"></div>
+      </div>
+
       <div id="panel-files" class="panel files" hidden>
         <div class="panel-tools">
           <label class="btn small">Upload<input id="upload-input" type="file" multiple hidden></label>
@@ -470,7 +685,7 @@ li.CodeMirror-hint-active .ht { color: inherit; }
           <span class="grow"></span>
           <button id="refresh-files" class="btn small ghost">Refresh</button>
         </div>
-        <p class="hint">The Python filesystem at <code>/home/pyodide</code> (the working directory). Files you upload or open in the editor are saved in this browser; files your programs create live until you restart.</p>
+        <p class="hint">Uploading a <code>.zip</code> can extract it into the project. The Python filesystem at <code>/home/pyodide</code> (the working directory). Files you upload or open in the editor are saved in this browser; files your programs create live until you restart.</p>
         <ul id="file-list" class="file-list"></ul>
       </div>
 
@@ -494,27 +709,62 @@ li.CodeMirror-hint-active .ht { color: inherit; }
     <span id="st-state" class="st-state"><i class="dot"></i><span>Loading Python…</span></span>
     <span id="st-iso" class="st-iso"></span>
     <span class="grow"></span>
+    <button id="st-problems" class="st-problems"></button>
     <span id="st-cursor"></span>
     <span id="st-version"></span>
   </footer>
 
   <div id="toast" class="toast" role="status" hidden></div>
+  <div id="tooltip" class="tooltip" hidden></div>
+  <div id="sigtip" class="tooltip sig" hidden></div>
+  <div id="palette" class="palette-backdrop" hidden>
+    <div class="palette" role="dialog" aria-label="Command palette">
+      <input id="palette-input" spellcheck="false" autocomplete="off" placeholder="Type a file name, > for commands, @ for symbols, : for a line">
+      <div id="palette-hint" class="palette-hint"></div>
+      <ul id="palette-list"></ul>
+    </div>
+  </div>
 
   <dialog id="shortcuts-dialog" class="dialog">
     <h2>Keyboard shortcuts</h2>
+    <div class="shortcut-cols">
     <table>
+      <tr><th colspan="2">Run</th></tr>
       <tr><td><kbd>Ctrl/⌘</kbd>+<kbd>Enter</kbd></td><td>Run current file</td></tr>
-      <tr><td><kbd>Shift</kbd>+<kbd>Enter</kbd></td><td>Run selection / current line in console</td></tr>
+      <tr><td><kbd>Shift</kbd>+<kbd>Enter</kbd></td><td>Run selection / line in console</td></tr>
+      <tr><td><kbd>Ctrl/⌘</kbd>+<kbd>Shift</kbd>+<kbd>Enter</kbd></td><td>Run <code># %%</code> cell</td></tr>
+      <tr><td><kbd>Ctrl</kbd>+<kbd>C</kbd> / <kbd>Shift</kbd>+<kbd>F5</kbd></td><td>Interrupt / stop</td></tr>
+      <tr><th colspan="2">Debug</th></tr>
+      <tr><td><kbd>F5</kbd></td><td>Start debugging / continue</td></tr>
+      <tr><td><kbd>F9</kbd> or gutter click</td><td>Toggle breakpoint</td></tr>
+      <tr><td><kbd>F10</kbd> / <kbd>F11</kbd> / <kbd>Shift</kbd>+<kbd>F11</kbd></td><td>Step over / into / out</td></tr>
+      <tr><th colspan="2">Navigate</th></tr>
+      <tr><td><kbd>Ctrl/⌘</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd>, <kbd>F1</kbd></td><td>Command palette</td></tr>
+      <tr><td><kbd>Ctrl/⌘</kbd>+<kbd>P</kbd></td><td>Go to file</td></tr>
+      <tr><td><kbd>Ctrl/⌘</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd></td><td>Go to symbol</td></tr>
+      <tr><td><kbd>Ctrl</kbd>+<kbd>G</kbd></td><td>Go to line</td></tr>
+      <tr><td><kbd>F12</kbd> / <kbd>Ctrl/⌘</kbd>+click</td><td>Go to definition</td></tr>
+      <tr><td><kbd>Shift</kbd>+<kbd>F12</kbd></td><td>Find references</td></tr>
+    </table>
+    <table>
+      <tr><th colspan="2">Edit</th></tr>
       <tr><td><kbd>Ctrl</kbd>+<kbd>Space</kbd></td><td>Autocomplete</td></tr>
+      <tr><td><kbd>F2</kbd></td><td>Rename symbol</td></tr>
+      <tr><td><kbd>Shift</kbd>+<kbd>Alt</kbd>+<kbd>F</kbd></td><td>Format with Black</td></tr>
       <tr><td><kbd>Ctrl/⌘</kbd>+<kbd>/</kbd></td><td>Toggle comment</td></tr>
       <tr><td><kbd>Ctrl/⌘</kbd>+<kbd>D</kbd></td><td>Select next occurrence</td></tr>
-      <tr><td><kbd>Ctrl/⌘</kbd>+<kbd>F</kbd> / <kbd>Alt</kbd>+<kbd>G</kbd></td><td>Find / jump to line</td></tr>
+      <tr><td><kbd>Ctrl/⌘</kbd>+<kbd>F</kbd></td><td>Find in file</td></tr>
+      <tr><td><kbd>Ctrl/⌘</kbd>+<kbd>Shift</kbd>+<kbd>F</kbd></td><td>Find in all files</td></tr>
+      <tr><td><kbd>Ctrl</kbd>+<kbd>Q</kbd></td><td>Fold / unfold block</td></tr>
+      <tr><td><kbd>Alt</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd></td><td>Move line</td></tr>
       <tr><td><kbd>Ctrl/⌘</kbd>+<kbd>S</kbd></td><td>Save (also autosaves)</td></tr>
-      <tr><td><kbd>Ctrl</kbd>+<kbd>C</kbd></td><td>Interrupt (in console)</td></tr>
-      <tr><td><kbd>Ctrl</kbd>+<kbd>L</kbd></td><td>Clear console</td></tr>
-      <tr><td><kbd>↑</kbd> / <kbd>↓</kbd></td><td>Console history</td></tr>
-      <tr><td><kbd>Tab</kbd></td><td>Complete in console</td></tr>
+      <tr><td><kbd>Ctrl/⌘</kbd>+<kbd>=</kbd>/<kbd>-</kbd></td><td>Font size</td></tr>
+      <tr><th colspan="2">Console</th></tr>
+      <tr><td><kbd>↑</kbd> / <kbd>↓</kbd>, <kbd>Tab</kbd></td><td>History, completion</td></tr>
+      <tr><td><kbd>Ctrl</kbd>+<kbd>L</kbd></td><td>Clear</td></tr>
+      <tr><td><code>%lsmagic</code>, <code>obj?</code></td><td>Magics, help</td></tr>
     </table>
+    </div>
     <form method="dialog"><button class="btn">Close</button></form>
   </dialog>
 
@@ -530,6 +780,11 @@ li.CodeMirror-hint-active .ht { color: inherit; }
   <script crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/search/search.min.js"></script>
   <script crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/search/jump-to-line.min.js"></script>
   <script crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/keymap/sublime.min.js"></script>
+  <script crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/fold/foldcode.min.js"></script>
+  <script crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/fold/foldgutter.min.js"></script>
+  <script crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/fold/indent-fold.min.js"></script>
+  <script crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/search/match-highlighter.min.js"></script>
+  <script crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/display/rulers.min.js"></script>
   <script type="text/plain" id="worker-src">
 // Web Worker that hosts the Pyodide (CPython → WebAssembly) interpreter.
 // Running Python off the main thread keeps the UI responsive, and lets us
@@ -565,9 +820,15 @@ function makeWriter(stream) {
 // Block until the page sends a line of input. Returns a string, or a number:
 // 1 = interrupted (Ctrl+C), 2 = unsupported (no SharedArrayBuffer), 3 = EOF.
 function readLine(consumeInterrupt) {
+  return waitReply('stdin-request', null, consumeInterrupt);
+}
+
+// Post a request to the page and block until it answers through the shared
+// stdin channel (used by input() and by the debugger when paused).
+function waitReply(kind, payload, consumeInterrupt = true) {
   if (!stdinCtrl) return 2;
   Atomics.store(stdinCtrl, 0, 0);
-  post({ type: 'stdin-request' });
+  post({ type: kind, payload: payload == null ? null : JSON.parse(payload) });
   while (Atomics.load(stdinCtrl, 0) === 0) Atomics.wait(stdinCtrl, 0, 0, 1000);
   const state = Atomics.load(stdinCtrl, 0);
   if (state === 1) {
@@ -636,6 +897,11 @@ async function init({ indexURL, shared, files, pySources }) {
       pendingInput = resolve;
       post({ type: 'stdin-request' });
     }),
+    wait_reply: (kind, payload) => waitReply(kind, payload),
+    wait_reply_async: (kind, payload) => new Promise((resolve) => {
+      pendingInput = resolve;
+      post({ type: kind, payload: JSON.parse(payload) });
+    }),
     sleep_async: (seconds) => new Promise((resolve) => {
       const timer = setTimeout(() => { pendingSleep = null; resolve(0); }, seconds * 1000);
       pendingSleep = () => { clearTimeout(timer); pendingSleep = null; resolve(1); };
@@ -655,8 +921,23 @@ async function init({ indexURL, shared, files, pySources }) {
   ide.setup();
   if (files) syncFiles(files, []);
 
+  // Fetch micropip quietly in the background (used for linting/formatting tools and pip).
+  pyodide.loadPackage('micropip', { messageCallback: () => {} }).catch(() => {});
   const python = pyodide.runPython('import sys; sys.version.split()[0]');
   post({ type: 'ready', version: pyodide.version, python, isolated: !!shared });
+}
+
+let toolsModule = null;
+const toolsTried = new Set();
+function tools() {
+  if (!toolsModule) toolsModule = pyodide.pyimport('ide_tools');
+  return toolsModule;
+}
+
+async function ensureJedi() {
+  if (!pyodide.loadedPackages.jedi) {
+    try { await pyodide.loadPackage('jedi', { messageCallback: () => {} }); } catch { /* offline */ }
+  }
 }
 
 function fullPath(path) {
@@ -689,7 +970,7 @@ async function syncMounts() {
 }
 
 const handlers = {
-  async run({ files, removed, main, autoInstall }) {
+  async run({ files, removed, main, autoInstall, args, mode, breakpoints, stopOnEntry }) {
     if (interrupt) interrupt[0] = 0;
     syncFiles(files, removed);
     ide.auto_install = autoInstall;
@@ -699,7 +980,17 @@ const handlers = {
     const mainSrc = pyodide.FS.readFile(fullPath(main), { encoding: 'utf8' });
     if (!sources.includes(mainSrc)) sources.push(mainSrc);
     await ide.ensure_installed(sources);
-    const result = await ide.run_file(main);
+    const pyArgs = pyodide.toPy(args || []);
+    const pyBreaks = pyodide.toPy(breakpoints || {});
+    let result;
+    try {
+      result = await ide.run_file.callKwargs(main, {
+        args: pyArgs, mode: mode || 'run', breakpoints: pyBreaks, stop_on_entry: !!stopOnEntry,
+      });
+    } finally {
+      pyArgs.destroy();
+      pyBreaks.destroy();
+    }
     await syncMounts();
     return result;
   },
@@ -712,15 +1003,40 @@ const handlers = {
   },
   replReset() { ide.repl_reset(); },
   async complete({ source, line, column, mode, path }) {
-    if (!pyodide.loadedPackages.jedi) {
-      try { await pyodide.loadPackage('jedi', { messageCallback: () => {} }); } catch { /* offline */ }
-    }
+    await ensureJedi();
     return JSON.parse(ide.complete(source, line, column, mode, path));
   },
   async install({ names }) {
     await ide.pip('install ' + names.join(' '));
   },
   listPackages() { return JSON.parse(ide.list_packages()); },
+  // ---- IDE tools (py: ide_tools) ----
+  async lint({ source, path, pyflakes }) {
+    if (pyflakes && !toolsTried.has('pyflakes')) {
+      toolsTried.add('pyflakes');
+      await tools().ensure_tool('pyflakes');
+    }
+    return JSON.parse(tools().lint(source, path));
+  },
+  async format({ source }) { return await tools().format_code(source); },
+  async intel({ kind, source, line, column, path, mode, newName }) {
+    await ensureJedi();
+    const t = tools();
+    if (kind === 'goto') return JSON.parse(t.goto(source, line, column, path));
+    if (kind === 'hover') return JSON.parse(t.hover(source, line, column, path, mode || 'editor'));
+    if (kind === 'signatures') return JSON.parse(t.signatures(source, line, column, path, mode || 'editor'));
+    if (kind === 'references') return JSON.parse(t.references(source, line, column, path));
+    if (kind === 'rename') return JSON.parse(t.rename(source, line, column, path, newName));
+    throw new Error('unknown intel request ' + kind);
+  },
+  variables() { return JSON.parse(tools().variables()); },
+  inspectVariable({ name }) { tools().inspect_variable(name); },
+  async tests({ files, removed, args }) {
+    syncFiles(files, removed);
+    if (interrupt) interrupt[0] = 0;
+    return await tools().run_tests(args || '');
+  },
+  importZip({ path }) { return JSON.parse(tools().import_zip(path)); },
   listFiles({ root }) { return JSON.parse(ide.list_files(root || HOME)); },
   readFile({ path }) {
     const data = pyodide.FS.readFile(fullPath(path));
@@ -782,7 +1098,7 @@ self.onmessage = async (event) => {
   }
 };
 </script>
-<script type="text/plain" id="py-ide">
+<script type="text/plain" class="pysrc" data-name="ide.py">
 """Runtime support for the in-browser Python IDE.
 
 This module is loaded into Pyodide inside the Web Worker. It provides:
@@ -867,7 +1183,13 @@ def show_figure(fig):
 
 
 def _flush_figures():
-    """Show any matplotlib figures that were created but never shown."""
+    """Show matplotlib figures / turtle drawings that were created but never shown."""
+    turtle = sys.modules.get("turtle")
+    if turtle is not None and hasattr(turtle, "_ide_flush"):
+        try:
+            turtle._ide_flush()
+        except Exception:
+            traceback.print_exc()
     helpers = sys.modules.get("matplotlib._pylab_helpers")
     if helpers is None:
         return
@@ -1071,7 +1393,7 @@ _PYPI_ALIASES = {
     "docx": "python-docx",
     "pptx": "python-pptx",
 }
-_NEVER = {"tkinter", "turtle", "turtledemo", "curses", "readline", "idlelib", "msvcrt", "winreg", "_winapi"}
+_NEVER = {"tkinter", "turtledemo", "curses", "readline", "idlelib", "msvcrt", "winreg", "_winapi"}
 
 
 def _status(msg):
@@ -1231,7 +1553,7 @@ def _purge_project_modules():
     prefix = HOME + "/"
     for name, mod in list(sys.modules.items()):
         f = getattr(mod, "__file__", None)
-        if isinstance(f, str) and f.startswith(prefix):
+        if name != "__main__" and isinstance(f, str) and f.startswith(prefix):
             del sys.modules[name]
     importlib.invalidate_caches()
 
@@ -1240,7 +1562,7 @@ def _strip_internal(tb):
     """Drop traceback entries that belong to this module (the IDE plumbing)."""
     keep = []
     while tb is not None:
-        if tb.tb_frame.f_code.co_filename != __file__:
+        if not tb.tb_frame.f_code.co_filename.startswith("/ide/"):
             keep.append(tb)
         tb = tb.tb_next
     for a, b in zip(keep, keep[1:] + [None]):
@@ -1309,10 +1631,16 @@ async def _execute(code, ns):
     return result
 
 
-async def run_file(path):
-    """Run a project file as ``__main__``; its namespace becomes the console's."""
+async def run_file(path, args=None, mode="run", breakpoints=None, stop_on_entry=False):
+    """Run a project file as ``__main__``; its namespace becomes the console's.
+
+    ``mode`` is "run", "debug" (breakpoints / stepping) or "profile".
+    """
     global _main
     _purge_project_modules()
+    turtle = sys.modules.get("turtle")
+    if turtle is not None and hasattr(turtle, "_ide_reset"):
+        turtle._ide_reset()
     os.chdir(HOME)
     full = os.path.join(HOME, path)
     if os.path.dirname(full) not in sys.path:
@@ -1324,12 +1652,29 @@ async def run_file(path):
     _main = types.ModuleType("__main__")
     _main.__dict__.update(__file__=full, __builtins__=builtins)
     sys.modules["__main__"] = _main
-    sys.argv = [full]
+    sys.argv = [full, *[str(a) for a in (args or [])]]
     linecache.checkcache(full)
     status = "ok"
+    prof = None
     try:
         code = compile(src, full, "exec", flags=_TLA, dont_inherit=True)
-        await _execute(code, _ns())
+        if mode == "debug":
+            import ide_tools
+
+            bps = breakpoints.to_py() if hasattr(breakpoints, "to_py") else (breakpoints or {})
+            if await ide_tools.debug_run(code, _ns(), bps, stop_on_entry) == "stopped":
+                status = "interrupted"
+        elif mode == "profile":
+            import cProfile
+
+            prof = cProfile.Profile()
+            prof.enable()
+            try:
+                await _execute(code, _ns())
+            finally:
+                prof.disable()
+        else:
+            await _execute(code, _ns())
     except SystemExit as e:
         _handle_system_exit(e)
         if e.code not in (None, 0):
@@ -1340,16 +1685,26 @@ async def run_file(path):
     except BaseException as e:
         _report_exception(e)
         status = "error"
+        if mode == "debug":
+            import ide_tools
+
+            print("Paused on the error: inspect variables in the Debug panel, then press Continue.", file=sys.stderr)
+            ide_tools.post_mortem(e)
     finally:
         _flush_figures()
         _flush()
+        if prof is not None:
+            import ide_tools
+
+            ide_tools.report_profile(prof)
     return status
 
 
 _compiler = codeop.CommandCompiler()
 _compiler.compiler.flags |= _TLA
 _buffer = []
-_PIP = re.compile(r"^\s*[%!]?\s*pip3?\s+(.*)$")
+_PIP = re.compile(r"^\s*[!]?\s*pip3?\s+(.*)$")
+_MAGIC = re.compile(r"^\s*([%!]|[\w.\[\]()'\"]+\?{1,2}\s*$)")
 
 
 def _cell_name(src):
@@ -1382,6 +1737,18 @@ async def repl_push(line):
         if m:
             await pip(m.group(1))
             return "complete"
+        if _MAGIC.match(line):
+            import ide_tools
+
+            try:
+                if await ide_tools.magic(line):
+                    return "complete"
+            except BaseException as e:
+                _report_exception(e)
+                return "complete"
+            finally:
+                _flush_figures()
+                _flush()
     if not _buffer and not line.strip():
         return "complete"
     _buffer.append(line)
@@ -1414,6 +1781,8 @@ async def repl_cell(source):
         if m:
             await pip(m.group(1))
             return "complete"
+        if _MAGIC.match(source):
+            return await repl_push(source.strip())
     name = _cell_name(source)
     try:
         tree = ast.parse(source, name, "exec")
@@ -1547,7 +1916,707 @@ def setup():
     os.environ.setdefault("COLUMNS", "100")
     return f"Python {sys.version.split()[0]}"
 </script>
-<script type="text/plain" id="py-ide-mpl">
+<script type="text/plain" class="pysrc" data-name="ide_tools.py">
+"""IDE tooling that runs inside Pyodide: debugger, linting, formatting,
+code intelligence (jedi), variable explorer, profiler, test runner,
+console magics and zip import. Used by ``ide.py`` and the page."""
+
+import ast
+import bdb
+import builtins
+import html
+import inspect
+import json
+import os
+import reprlib
+import shlex
+import sys
+import time
+import traceback
+
+import _ide_js
+import ide
+
+HOME = ide.HOME
+
+# --------------------------------------------------------------------------
+# Blocking round-trips to the page (SharedArrayBuffer or JSPI)
+# --------------------------------------------------------------------------
+
+
+def wait_reply(kind, payload):
+    """Send ``payload`` to the page and block until it replies with a string."""
+    ide._flush()
+    data = json.dumps(payload, default=str)
+    result = _ide_js.wait_reply(kind, data)
+    if result == ide._UNSUPPORTED and ide._can_suspend():
+        from pyodide.ffi import run_sync
+
+        result = run_sync(_ide_js.wait_reply_async(kind, data))
+    if isinstance(result, str):
+        return result
+    if result == ide._UNSUPPORTED:
+        raise RuntimeError("The debugger needs cross-origin isolation or WebAssembly JSPI.")
+    return "quit"
+
+
+# --------------------------------------------------------------------------
+# Value previews (debugger + variable explorer)
+# --------------------------------------------------------------------------
+
+_repr = reprlib.Repr()
+_repr.maxstring = 120
+_repr.maxother = 120
+_repr.maxlist = _repr.maxtuple = _repr.maxset = _repr.maxdict = 12
+_repr.maxlevel = 3
+
+
+def _preview(value):
+    try:
+        mod = type(value).__module__ or ""
+        if mod.startswith(("numpy", "pandas")):
+            text = repr(value)
+            text = " ".join(text.split())
+            return text[:157] + "…" if len(text) > 160 else text
+        return _repr.repr(value)
+    except Exception as e:  # repr() may fail on half-built objects
+        return f"<repr failed: {type(e).__name__}>"
+
+
+def _size(value):
+    try:
+        shape = getattr(value, "shape", None)
+        if isinstance(shape, tuple):
+            return " × ".join(str(s) for s in shape) or "scalar"
+    except Exception:
+        pass
+    if isinstance(value, (str, bytes, list, tuple, dict, set, frozenset, bytearray, range)):
+        try:
+            return str(len(value))
+        except Exception:
+            return ""
+    return ""
+
+
+def _is_noise(name, value, hide_callables=False):
+    if name.startswith("__") and name.endswith("__"):
+        return True
+    if name in ("_", "__", "___") or inspect.ismodule(value):
+        return True
+    if hide_callables and (inspect.isfunction(value) or inspect.isclass(value) or inspect.isbuiltin(value)):
+        return True
+    return False
+
+
+def describe(mapping, hide_callables=False, limit=300):
+    out = []
+    for name, value in list(mapping.items()):
+        if not isinstance(name, str) or _is_noise(name, value, hide_callables):
+            continue
+        out.append({"name": name, "type": type(value).__name__, "size": _size(value), "value": _preview(value)})
+        if len(out) >= limit:
+            break
+    out.sort(key=lambda v: v["name"].lower())
+    return out
+
+
+def variables():
+    """Variables of the console / last run namespace, for the explorer panel."""
+    return json.dumps(describe(ide._ns()))
+
+
+def inspect_variable(name):
+    """Show a variable in the console with its richest representation."""
+    ns = ide._ns()
+    if name not in ns:
+        print(f"{name} is no longer defined")
+        return
+    value = ns[name]
+    print(f"{name}: {type(value).__module__}.{type(value).__qualname__}")
+    ide._display_one(value)
+
+
+# --------------------------------------------------------------------------
+# Debugger
+# --------------------------------------------------------------------------
+
+
+def _rel(path):
+    path = str(path)
+    return os.path.relpath(path, HOME) if path.startswith(HOME + "/") else path
+
+
+def _is_project(frame):
+    return frame.f_code.co_filename.startswith(HOME + "/")
+
+
+_WATCHES = []  # shared by all debugger sessions (incl. post-mortem)
+
+
+class Debugger(bdb.Bdb):
+    """A bdb debugger whose UI is the page (breakpoints, stepping, frames)."""
+
+    def __init__(self, breakpoints=None, stop_on_entry=False):
+        super().__init__()
+        self.stop_on_entry = stop_on_entry
+        self.watches = _WATCHES
+        self.set_breakpoints(breakpoints or {})
+
+    def set_breakpoints(self, breakpoints):
+        self.clear_all_breaks()
+        for path, lines in breakpoints.items():
+            full = os.path.join(HOME, path)
+            for line in lines:
+                self.set_break(full, int(line))  # returns an error string for blank lines; ignored
+
+    # Only stop in project files; library code is stepped through.
+    def stop_here(self, frame):
+        return _is_project(frame) and super().stop_here(frame)
+
+    def break_here(self, frame):
+        return _is_project(frame) and super().break_here(frame)
+
+    def user_call(self, frame, argument_list):
+        pass
+
+    def user_line(self, frame):
+        if _is_project(frame):
+            self.interaction(frame)
+
+    def user_return(self, frame, return_value):
+        pass
+
+    def user_exception(self, frame, exc_info):
+        pass
+
+    def _state(self, stack, index, exc=None, evaluated=None):
+        frame, line = stack[index]
+        is_module = frame.f_code.co_name == "<module>"
+        state = {
+            "file": _rel(frame.f_code.co_filename),
+            "line": line,
+            "index": index,
+            "frames": [{"name": f.f_code.co_name, "file": _rel(f.f_code.co_filename), "line": ln} for f, ln in stack],
+            "locals": describe(frame.f_locals, hide_callables=is_module),
+            "globals": [] if is_module else describe(frame.f_globals, hide_callables=True, limit=150),
+            "watches": [self._evaluate(w, frame) for w in self.watches],
+        }
+        if exc is not None:
+            state["exception"] = "".join(traceback.format_exception_only(type(exc), exc)).strip()
+        if evaluated is not None:
+            state["evaluated"] = evaluated
+        return state
+
+    def _evaluate(self, expr, frame):
+        try:
+            value = eval(expr, frame.f_globals, frame.f_locals)
+            return {"expr": expr, "value": _preview(value), "type": type(value).__name__}
+        except SyntaxError:
+            try:
+                exec(expr, frame.f_globals, frame.f_locals)
+                return {"expr": expr, "value": "✓ executed", "type": ""}
+            except BaseException as e:
+                return {"expr": expr, "value": f"{type(e).__name__}: {e}", "type": "error"}
+        except BaseException as e:
+            return {"expr": expr, "value": f"{type(e).__name__}: {e}", "type": "error"}
+
+    def interaction(self, frame, tb=None, exc=None):
+        stack, _ = self.get_stack(frame, tb)
+        stack = [(f, ln) for f, ln in stack if _is_project(f)]
+        if not stack:
+            self.set_continue()
+            return
+        index = len(stack) - 1
+        evaluated = None
+        while True:
+            cmd = wait_reply("debug-pause", self._state(stack, index, exc, evaluated))
+            evaluated = None
+            word, _, arg = cmd.partition(" ")
+            if word == "continue":
+                self.set_continue()
+                return
+            if word == "step":
+                self.set_step()
+                return
+            if word == "next":
+                self.set_next(stack[index][0])
+                return
+            if word == "return":
+                self.set_return(stack[index][0])
+                return
+            if word == "quit":
+                self.set_quit()
+                return
+            if word == "frame":
+                index = max(0, min(len(stack) - 1, int(arg)))
+            elif word == "eval":
+                evaluated = self._evaluate(arg, stack[index][0])
+            elif word == "watch":
+                _WATCHES[:] = json.loads(arg)
+            elif word == "breaks":
+                self.set_breakpoints(json.loads(arg))
+
+
+_active = None
+_NO_FRAME = object()
+
+
+async def debug_run(code, ns, breakpoints, stop_on_entry):
+    """Execute ``code`` under the debugger. Uncaught errors open post-mortem."""
+    global _active
+    dbg = Debugger(breakpoints, stop_on_entry)
+    _active = dbg
+    dbg.reset()
+    if not stop_on_entry and not dbg.breaks:
+        # Nothing to stop at: run untraced (errors still open post-mortem).
+        try:
+            await ide._execute(code, ns)
+        finally:
+            _active = None
+        return
+    if stop_on_entry:
+        dbg.set_step()
+    else:
+        # After reset() bdb is in "stop anywhere" mode; a non-frame stopframe
+        # means "only stop at breakpoints".
+        dbg._set_stopinfo(_NO_FRAME, None, -1)
+    sys.settrace(dbg.trace_dispatch)
+    try:
+        await ide._execute(code, ns)
+    except bdb.BdbQuit:
+        print("Debugging stopped.", file=sys.stderr)
+        return "stopped"
+    finally:
+        sys.settrace(None)
+        _active = None
+
+
+def post_mortem(exc):
+    """Inspect the frames of an uncaught exception (``%debug``, or after a debug run)."""
+    tb = ide._strip_internal(exc.__traceback__)
+    frames = [t for t in _walk(tb) if _is_project(t.tb_frame) or t.tb_frame.f_code.co_filename.startswith("<input-")]
+    if not frames:
+        print("No frames from your code to inspect.", file=sys.stderr)
+        return
+    dbg = Debugger()
+    dbg.reset()
+    last = frames[-1]
+    stack = [(t.tb_frame, t.tb_lineno) for t in frames]
+    index = len(stack) - 1
+    evaluated = None
+    while True:
+        state = dbg._state(stack, index, exc, evaluated)
+        state["postMortem"] = True
+        cmd = wait_reply("debug-pause", state)
+        evaluated = None
+        word, _, arg = cmd.partition(" ")
+        if word in ("continue", "quit", "step", "next", "return"):
+            return
+        if word == "frame":
+            index = max(0, min(len(stack) - 1, int(arg)))
+        elif word == "eval":
+            evaluated = dbg._evaluate(arg, stack[index][0])
+        elif word == "watch":
+            _WATCHES[:] = json.loads(arg)
+    del last
+
+
+def _walk(tb):
+    while tb is not None:
+        yield tb
+        tb = tb.tb_next
+
+
+# --------------------------------------------------------------------------
+# Linting and formatting
+# --------------------------------------------------------------------------
+
+_tool_failures = set()
+
+
+async def ensure_tool(name):
+    """Import a dev tool, installing it with micropip on first use."""
+    try:
+        return __import__(name)
+    except ImportError:
+        pass
+    if name in _tool_failures:
+        return None
+    try:
+        micropip = await ide._micropip()
+        await micropip.install(name)
+        import importlib
+
+        importlib.invalidate_caches()
+        return __import__(name)
+    except Exception:
+        _tool_failures.add(name)
+        return None
+
+
+def lint(source, path):
+    """Syntax errors (always) plus pyflakes warnings (when installed)."""
+    source = str(source)
+    filename = os.path.join(HOME, str(path))
+    try:
+        compile(source, filename, "exec", flags=ide._TLA, dont_inherit=True)
+    except SyntaxError as e:
+        return json.dumps([{
+            "line": e.lineno or 1, "col": max((e.offset or 1) - 1, 0),
+            "endLine": e.end_lineno or e.lineno or 1, "endCol": max((e.end_offset or 0) - 1, 0),
+            "msg": f"{type(e).__name__}: {e.msg}", "severity": "error",
+        }])
+    except (ValueError, OverflowError) as e:
+        return json.dumps([{"line": 1, "col": 0, "msg": str(e), "severity": "error"}])
+    try:
+        from pyflakes import checker, messages
+    except ImportError:
+        return "[]"
+    tree = ast.parse(source, filename)
+    w = checker.Checker(tree, filename=filename, builtins={"display"})
+    out = []
+    errors = (messages.UndefinedName, messages.UndefinedLocal, messages.UndefinedExport)
+    for m in sorted(w.messages, key=lambda m: (m.lineno, m.col)):
+        text = m.message % m.message_args
+        if "await" in text and "outside" in text:
+            continue  # top-level await is allowed here
+        out.append({
+            "line": m.lineno, "col": m.col, "msg": text,
+            "severity": "error" if isinstance(m, errors) else "warning",
+        })
+    return json.dumps(out)
+
+
+async def format_code(source):
+    black = await ensure_tool("black")
+    if black is None:
+        raise RuntimeError("Could not install the 'black' formatter (are you offline?)")
+    source = str(source)
+    try:
+        return black.format_str(source, mode=black.Mode())
+    except black.NothingChanged:
+        return source
+
+
+# --------------------------------------------------------------------------
+# Code intelligence (jedi)
+# --------------------------------------------------------------------------
+
+
+def _jedi_script(source, path, mode):
+    import jedi
+
+    if mode == "console":
+        return jedi.Interpreter(str(source), [ide._ns()])
+    project = jedi.Project(HOME, added_sys_path=[HOME])
+    return jedi.Script(str(source), path=os.path.join(HOME, str(path)), project=project)
+
+
+def _loc(name):
+    path = name.module_path
+    return {
+        "file": _rel(path) if path else None,
+        "inProject": bool(path) and str(path).startswith(HOME + "/"),
+        "line": name.line,
+        "col": name.column,
+        "name": name.name,
+        "module": name.module_name,
+        "type": name.type,
+    }
+
+
+def goto(source, line, col, path):
+    script = _jedi_script(source, path, "editor")
+    names = script.goto(int(line), int(col), follow_imports=True, follow_builtin_imports=True)
+    if not names:
+        names = script.infer(int(line), int(col))
+    return json.dumps([_loc(n) for n in names if n.line is not None][:20])
+
+
+def hover(source, line, col, path, mode="editor"):
+    script = _jedi_script(source, path, mode)
+    try:
+        names = script.help(int(line), int(col))
+    except Exception:
+        names = []
+    if not names:
+        return "null"
+    n = names[0]
+    doc = n.docstring() or ""
+    if len(doc) > 4000:
+        doc = doc[:4000] + "\n…"
+    desc = n.description if n.type not in ("keyword",) else ""
+    return json.dumps({"name": n.name, "type": n.type, "full": n.full_name or "", "doc": doc, "desc": desc})
+
+
+def signatures(source, line, col, path, mode="editor"):
+    script = _jedi_script(source, path, mode)
+    try:
+        sigs = script.get_signatures(int(line), int(col))
+    except Exception:
+        sigs = []
+    out = []
+    for s in sigs[:3]:
+        out.append({
+            "name": s.name,
+            "params": [p.to_string() for p in s.params],
+            "index": s.index,
+            "doc": (s.docstring(raw=True) or "").strip().split("\n\n")[0][:400],
+        })
+    return json.dumps(out)
+
+
+def references(source, line, col, path):
+    script = _jedi_script(source, path, "editor")
+    refs = script.get_references(int(line), int(col), scope="project")
+    out = []
+    for r in refs[:500]:
+        if not r.module_path or not str(r.module_path).startswith(HOME + "/"):
+            continue
+        item = _loc(r)
+        try:
+            item["text"] = r.get_line_code().strip()
+        except Exception:
+            item["text"] = ""
+        out.append(item)
+    return json.dumps(out)
+
+
+def rename(source, line, col, path, new_name):
+    script = _jedi_script(source, path, "editor")
+    refactoring = script.rename(int(line), int(col), new_name=str(new_name))
+    out = {}
+    for p, changed in refactoring.get_changed_files().items():
+        if str(p).startswith(HOME + "/"):
+            out[_rel(p)] = changed.get_new_code()
+    return json.dumps(out)
+
+
+# --------------------------------------------------------------------------
+# Profiler and tests
+# --------------------------------------------------------------------------
+
+
+def report_profile(prof, limit=40):
+    import pstats
+
+    stats = pstats.Stats(prof)
+    rows = []
+    for (filename, lineno, func), (cc, nc, tt, ct, _callers) in stats.stats.items():
+        if filename in (ide.__file__, __file__) or "/asyncio/" in filename or "pyodide" in filename:
+            continue
+        where = _rel(filename) if filename.startswith(HOME) else os.path.basename(filename)
+        if filename == "~":
+            where = "built-in"
+        rows.append((ct, tt, nc, cc, f"{func}", f"{where}:{lineno}" if lineno else where))
+    rows.sort(reverse=True)
+    total = sum(r[1] for r in rows) or 1e-9
+    head = "<tr><th>cumulative</th><th>own time</th><th>own %</th><th>calls</th><th>function</th><th>where</th></tr>"
+    body = "".join(
+        f"<tr><td>{ct * 1000:.1f} ms</td><td>{tt * 1000:.1f} ms</td><td>{100 * tt / total:.1f}%</td>"
+        f"<td>{nc if nc == cc else f'{nc}/{cc}'}</td><td style='text-align:left'><b>{html.escape(fn)}</b></td>"
+        f"<td style='text-align:left;color:#677185'>{html.escape(where)}</td></tr>"
+        for ct, tt, nc, cc, fn, where in rows[:limit]
+    )
+    ide._emit("text/html", f"<div style='font-weight:600;margin-bottom:6px'>Profile — top {min(limit, len(rows))} functions by cumulative time</div><table><thead>{head}</thead><tbody>{body}</tbody></table>")
+
+
+async def run_tests(args=""):
+    """Run pytest (or unittest discovery as a fallback) in the project."""
+    ide._purge_project_modules()
+    os.chdir(HOME)
+    if HOME not in sys.path:
+        sys.path.insert(0, HOME)
+    pytest = None
+    try:
+        import pytest
+    except ImportError:
+        try:
+            import pyodide_js
+
+            ide._status("Loading pytest…")
+            await pyodide_js.loadPackage("pytest")
+            import pytest
+        except Exception:
+            pytest = await ensure_tool("pytest")
+    argv = shlex.split(str(args or ""))
+    if pytest is not None:
+        code = pytest.main(["-p", "no:cacheprovider", "--color=yes", "-q", *argv])
+        ide._flush()
+        return int(code)
+    import unittest
+
+    print("pytest is unavailable; running unittest discovery")
+    prog = unittest.main(module=None, argv=["unittest", "discover", "-s", HOME, *argv], exit=False)
+    return 0 if prog.result.wasSuccessful() else 1
+
+
+# --------------------------------------------------------------------------
+# Console magics and help
+# --------------------------------------------------------------------------
+
+MAGICS = {
+    "%timeit": "time a statement:  %timeit sum(range(1000))",
+    "%time": "run once and report the time:  %time big_function()",
+    "%who / %whos": "list variables (with details)",
+    "%reset": "delete all variables",
+    "%run": "run a project file:  %run script.py arg1 arg2",
+    "%debug": "inspect the last error in the debugger",
+    "%pip": "install packages:  %pip install requests",
+    "%pwd / %cd / %ls": "working directory helpers",
+    "%env": "show environment variables",
+    "%clear": "clear the console",
+    "obj? / obj??": "help / source code for an object",
+}
+
+
+def _format_time(t):
+    for unit, scale in (("s", 1), ("ms", 1e3), ("µs", 1e6), ("ns", 1e9)):
+        if t >= 1 / scale or unit == "ns":
+            return f"{t * scale:.3g} {unit}"
+
+
+async def magic(line):
+    """Handle an IPython-style magic or help request. Returns True if handled."""
+    line = str(line).strip()
+    if line.endswith("?") and not line.startswith(("%", "#")) and line.rstrip("?").strip():
+        _help(line.rstrip("?").strip(), source=line.endswith("??"))
+        return True
+    if line.startswith("!"):
+        print("Shell commands are not available in the browser. Try %ls, %cd, %pip install ….", file=sys.stderr)
+        return True
+    if not line.startswith("%"):
+        return False
+    name, _, arg = line.partition(" ")
+    arg = arg.strip()
+    ns = ide._ns()
+    if name in ("%timeit",):
+        import timeit
+
+        timer = timeit.Timer(arg or "pass", globals=ns)
+        number, _ = timer.autorange()
+        runs = timer.repeat(repeat=5, number=number)
+        best = min(runs) / number
+        mean = sum(runs) / len(runs) / number
+        print(f"{_format_time(mean)} per loop (best {_format_time(best)}, 5 runs, {number:,} loops each)")
+    elif name == "%time":
+        start, cpu = time.perf_counter(), time.process_time()
+        code = compile(arg, "<timed>", "single", flags=ide._TLA, dont_inherit=True)
+        try:
+            await ide._execute(code, ns)
+        finally:
+            print(f"Wall time: {_format_time(time.perf_counter() - start)}  (CPU: {_format_time(time.process_time() - cpu)})")
+    elif name == "%who":
+        names = [v["name"] for v in describe(ns, hide_callables=False)]
+        print("  ".join(names) if names else "Interactive namespace is empty.")
+    elif name == "%whos":
+        rows = describe(ns)
+        if not rows:
+            print("Interactive namespace is empty.")
+        for v in rows:
+            size = f" [{v['size']}]" if v["size"] else ""
+            print(f"{v['name']:<20} {v['type'] + size:<22} {v['value']}")
+    elif name == "%reset":
+        for k in [k for k in ns if not (k.startswith("__") and k.endswith("__"))]:
+            del ns[k]
+        print("Namespace cleared.")
+    elif name == "%run":
+        parts = shlex.split(arg)
+        if not parts:
+            print("usage: %run file.py [args…]")
+        else:
+            await ide.run_file(parts[0], args=parts[1:])
+    elif name == "%debug":
+        exc = getattr(sys, "last_exc", None) or getattr(sys, "last_value", None)
+        if exc is None:
+            print("No error to debug. Run something that raises first.")
+        else:
+            post_mortem(exc)
+    elif name == "%pip":
+        await ide.pip(arg)
+    elif name == "%pwd":
+        print(os.getcwd())
+    elif name == "%cd":
+        os.chdir(os.path.expanduser(arg or HOME))
+        print(os.getcwd())
+    elif name in ("%ls", "%dir"):
+        target = arg or "."
+        for entry in sorted(os.listdir(target)):
+            full = os.path.join(target, entry)
+            print(entry + ("/" if os.path.isdir(full) else f"  ({os.path.getsize(full)} B)"))
+    elif name == "%env":
+        for k, v in sorted(os.environ.items()):
+            print(f"{k}={v}")
+    elif name in ("%clear", "%cls"):
+        sys.stdout.write("\x1b[2J")
+    elif name in ("%magic", "%lsmagic", "%help"):
+        for k, v in MAGICS.items():
+            print(f"{k:<18} {v}")
+    else:
+        print(f"Unknown magic {name}. Type %lsmagic for the list.", file=sys.stderr)
+    return True
+
+
+def _help(expr, source=False):
+    try:
+        obj = eval(expr, ide._ns())
+    except Exception as e:
+        print(f"Object `{expr}` not found ({type(e).__name__}).", file=sys.stderr)
+        return
+    print(f"\x1b[1mType:\x1b[0m      {type(obj).__module__}.{type(obj).__qualname__}")
+    try:
+        sig = inspect.signature(obj)
+        print(f"\x1b[1mSignature:\x1b[0m {expr.split('.')[-1]}{sig}")
+    except (TypeError, ValueError):
+        pass
+    try:
+        f = inspect.getsourcefile(obj) or inspect.getfile(obj)
+        print(f"\x1b[1mFile:\x1b[0m      {f}")
+    except TypeError:
+        pass
+    if source:
+        try:
+            print(inspect.getsource(obj))
+            return
+        except (OSError, TypeError):
+            print("(source not available)")
+    doc = inspect.getdoc(obj)
+    if doc:
+        print(f"\x1b[1mDocstring:\x1b[0m\n{doc}")
+    elif not source:
+        print(f"\x1b[1mValue:\x1b[0m     {_preview(obj)}")
+
+
+# --------------------------------------------------------------------------
+# Zip import
+# --------------------------------------------------------------------------
+
+
+def import_zip(path):
+    """Extract a zip into the project (stripping a single top-level folder)."""
+    import zipfile
+
+    with zipfile.ZipFile(path) as zf:
+        names = [n for n in zf.namelist() if not n.endswith("/") and "__MACOSX" not in n]
+        tops = {n.split("/", 1)[0] for n in names}
+        strip = len(tops) == 1 and all("/" in n for n in names)
+        out = []
+        for n in names:
+            rel = n.split("/", 1)[1] if strip else n
+            parts = [p for p in rel.split("/") if p not in ("", ".", "..")]
+            if not parts or any(p.startswith(".") for p in parts):
+                continue
+            dest = os.path.join(HOME, *parts)
+            os.makedirs(os.path.dirname(dest), exist_ok=True)
+            with zf.open(n) as src, open(dest, "wb") as dst:
+                dst.write(src.read())
+            out.append("/".join(parts))
+    return json.dumps(out)
+
+
+builtins.__dict__.setdefault("display", ide.display)
+</script>
+<script type="text/plain" class="pysrc" data-name="ide_mpl.py">
 """Matplotlib backend that renders figures inline in the browser console.
 
 Selected via ``MPLBACKEND=module://ide_mpl``. ``plt.show()`` and
@@ -1584,6 +2653,612 @@ class _BackendIDE(_BackendAgg):
         for manager in managers:
             ide.show_figure(manager.canvas.figure)
         Gcf.destroy_all()
+</script>
+<script type="text/plain" class="pysrc" data-name="turtle.py">
+"""Turtle graphics for the browser IDE.
+
+A drop-in subset of the standard ``turtle`` module. Drawing commands are
+recorded and rendered as an animated SVG in the console when the program
+finishes (or on ``done()`` / ``mainloop()``). Event handlers (``onkey``,
+``onclick``, ``ontimer``) are not supported in the browser.
+"""
+
+import math
+
+__all__ = [
+    "Turtle", "RawTurtle", "Pen", "Screen", "done", "mainloop", "exitonclick", "bye",
+    "forward", "fd", "backward", "bk", "back", "right", "rt", "left", "lt", "goto", "setpos",
+    "setposition", "setx", "sety", "setheading", "seth", "home", "circle", "dot", "stamp",
+    "speed", "position", "pos", "xcor", "ycor", "heading", "towards", "distance", "pendown",
+    "pd", "down", "penup", "pu", "up", "isdown", "pensize", "width", "pencolor", "fillcolor",
+    "color", "begin_fill", "end_fill", "filling", "write", "hideturtle", "ht", "showturtle",
+    "st", "isvisible", "shape", "bgcolor", "title", "setup", "tracer", "update", "clear",
+    "reset", "colormode", "degrees", "radians", "screensize", "delay", "shapesize",
+    "clearscreen", "resetscreen", "listen", "onkey", "onkeypress", "onclick", "ontimer",
+    "onscreenclick", "getscreen", "turtles", "teleport", "undo", "textinput", "numinput",
+]
+
+_items = []  # (kind, data, duration, owner)
+_shown = 0  # number of items already displayed
+_warned = set()
+
+
+def _warn(what):
+    if what not in _warned:
+        _warned.add(what)
+        print(f"turtle: {what} is not supported in the browser (ignored)")
+
+
+class _ScreenState:
+    def __init__(self):
+        self.bg = "white"
+        self.colormode = 1.0
+        self.turtles = []
+        self.size = None
+        self.instant = False
+
+
+_screen = _ScreenState()
+
+
+def _color(args):
+    if not args:
+        return None
+    if len(args) == 1:
+        c = args[0]
+        if isinstance(c, str):
+            return c
+        args = tuple(c)
+    r, g, b = args[:3]
+    if _screen.colormode == 1.0:
+        r, g, b = (round(float(v) * 255) for v in (r, g, b))
+    return f"rgb({int(r)},{int(g)},{int(b)})"
+
+
+class Turtle:
+    def __init__(self, shape="classic", undobuffersize=1000, visible=True):
+        self._reset_state()
+        self._visible = visible
+        _screen.turtles.append(self)
+
+    def _reset_state(self):
+        self._x = self._y = 0.0
+        self._heading = 0.0
+        self._down = True
+        self._pencolor = "black"
+        self._fillcolor = "black"
+        self._width = 1
+        self._fill = None
+        self._speed = 3
+        self._visible = True
+        self._degrees = 360.0
+
+    # --- movement -------------------------------------------------------
+    def _rad(self):
+        return math.radians(self._heading * 360.0 / self._degrees)
+
+    def _move(self, x, y, draw=True):
+        if self._down and draw and (x, y) != (self._x, self._y):
+            length = math.hypot(x - self._x, y - self._y)
+            _items.append(("line", (self._x, self._y, x, y, self._pencolor, self._width), self._dur(length), self))
+        self._x, self._y = float(x), float(y)
+        if self._fill is not None:
+            self._fill.append((self._x, self._y))
+
+    def _dur(self, length):
+        if _screen.instant or self._speed == 0:
+            return 0.0
+        return length / (40.0 * self._speed + 40)
+
+    def forward(self, distance):
+        a = self._rad()
+        self._move(self._x + distance * math.cos(a), self._y + distance * math.sin(a))
+
+    fd = forward
+
+    def backward(self, distance):
+        self.forward(-distance)
+
+    bk = back = backward
+
+    def left(self, angle):
+        self._heading = (self._heading + angle) % self._degrees
+
+    lt = left
+
+    def right(self, angle):
+        self.left(-angle)
+
+    rt = right
+
+    def goto(self, x, y=None):
+        if y is None:
+            x, y = x
+        self._move(x, y)
+
+    setpos = setposition = goto
+
+    def teleport(self, x=None, y=None, *, fill_gap=False):
+        self._move(self._x if x is None else x, self._y if y is None else y, draw=False)
+
+    def setx(self, x):
+        self._move(x, self._y)
+
+    def sety(self, y):
+        self._move(self._x, y)
+
+    def setheading(self, to_angle):
+        self._heading = to_angle % self._degrees
+
+    seth = setheading
+
+    def home(self):
+        self.goto(0, 0)
+        self._heading = 0.0
+
+    def circle(self, radius, extent=None, steps=None):
+        if extent is None:
+            extent = self._degrees
+        frac = abs(extent) / self._degrees
+        if steps is None:
+            steps = 1 + int(min(11 + abs(radius) / 6.0, 59.0) * frac)
+        w = extent / steps
+        w2 = 0.5 * w
+        length = 2.0 * radius * math.sin(math.radians(w2 * 360.0 / self._degrees))
+        if radius < 0:
+            length, w, w2 = -length, -w, -w2
+        self.left(w2)
+        for _ in range(steps):
+            self.forward(length)
+            self.left(w)
+        self.left(-w2)
+
+    def dot(self, size=None, *color):
+        size = size or max(self._width + 4, 2 * self._width)
+        _items.append(("dot", (self._x, self._y, size, _color(color) or self._pencolor), 0.0, self))
+
+    def stamp(self):
+        _items.append(("turtle", (self._x, self._y, self._heading * 360.0 / self._degrees, self._fillcolor, self._pencolor), 0.0, self))
+        return len(_items)
+
+    def clearstamp(self, stampid):
+        pass
+
+    def clearstamps(self, n=None):
+        pass
+
+    def write(self, arg, move=False, align="left", font=("Arial", 8, "normal")):
+        _items.append(("text", (self._x, self._y, str(arg), align, font, self._pencolor), 0.0, self))
+
+    # --- state ---------------------------------------------------------
+    def speed(self, speed=None):
+        if speed is None:
+            return self._speed
+        names = {"fastest": 0, "fast": 10, "normal": 6, "slow": 3, "slowest": 1}
+        speed = names.get(speed, speed)
+        self._speed = 0 if speed == 0 else max(1, min(10, int(speed)))
+
+    def position(self):
+        return Vec2D(self._x, self._y)
+
+    pos = position
+
+    def xcor(self):
+        return self._x
+
+    def ycor(self):
+        return self._y
+
+    def heading(self):
+        return self._heading
+
+    def towards(self, x, y=None):
+        if y is None:
+            x, y = x
+        return math.degrees(math.atan2(y - self._y, x - self._x)) % 360 * self._degrees / 360.0
+
+    def distance(self, x, y=None):
+        if y is None:
+            x, y = x
+        return math.hypot(x - self._x, y - self._y)
+
+    def degrees(self, fullcircle=360.0):
+        self._degrees = fullcircle
+
+    def radians(self):
+        self._degrees = 2 * math.pi
+
+    def pendown(self):
+        self._down = True
+
+    pd = down = pendown
+
+    def penup(self):
+        self._down = False
+
+    pu = up = penup
+
+    def isdown(self):
+        return self._down
+
+    def pensize(self, width=None):
+        if width is None:
+            return self._width
+        self._width = width
+
+    width = pensize
+
+    def pencolor(self, *args):
+        if not args:
+            return self._pencolor
+        self._pencolor = _color(args)
+
+    def fillcolor(self, *args):
+        if not args:
+            return self._fillcolor
+        self._fillcolor = _color(args)
+
+    def color(self, *args):
+        if not args:
+            return self._pencolor, self._fillcolor
+        if len(args) == 2 and not all(isinstance(a, (int, float)) for a in args):
+            self._pencolor, self._fillcolor = _color((args[0],)), _color((args[1],))
+        else:
+            self._pencolor = self._fillcolor = _color(args)
+
+    def begin_fill(self):
+        self._fill = [(self._x, self._y)]
+        self._fill_index = len(_items)
+
+    def end_fill(self):
+        if self._fill and len(self._fill) > 2:
+            _items.insert(self._fill_index, ("fill", (list(self._fill), self._fillcolor), 0.0, self))
+        self._fill = None
+
+    def filling(self):
+        return self._fill is not None
+
+    def hideturtle(self):
+        self._visible = False
+
+    ht = hideturtle
+
+    def showturtle(self):
+        self._visible = True
+
+    st = showturtle
+
+    def isvisible(self):
+        return self._visible
+
+    def shape(self, name=None):
+        return "classic" if name is None else None
+
+    def shapesize(self, *args, **kwargs):
+        pass
+
+    turtlesize = shapesize
+
+    def clear(self):
+        _items[:] = [it for it in _items if it[3] is not self]
+
+    def reset(self):
+        self.clear()
+        self._reset_state()
+
+    def undo(self):
+        for i in range(len(_items) - 1, -1, -1):
+            if _items[i][3] is self:
+                del _items[i]
+                break
+
+    def getscreen(self):
+        return Screen()
+
+    def onclick(self, *a, **k):
+        _warn("onclick")
+
+    onrelease = ondrag = onclick
+
+    def hideturtle_all(self):
+        pass
+
+
+RawTurtle = Pen = RawPen = Turtle
+
+
+class Vec2D(tuple):
+    def __new__(cls, x, y):
+        return tuple.__new__(cls, (x, y))
+
+    def __add__(self, other):
+        return Vec2D(self[0] + other[0], self[1] + other[1])
+
+    def __sub__(self, other):
+        return Vec2D(self[0] - other[0], self[1] - other[1])
+
+    def __mul__(self, other):
+        if isinstance(other, Vec2D):
+            return self[0] * other[0] + self[1] * other[1]
+        return Vec2D(self[0] * other, self[1] * other)
+
+    __rmul__ = __mul__
+
+    def __abs__(self):
+        return math.hypot(*self)
+
+    def __repr__(self):
+        return f"({self[0]:.2f},{self[1]:.2f})"
+
+
+class _Screen:
+    def bgcolor(self, *args):
+        if not args:
+            return _screen.bg
+        _screen.bg = _color(args)
+
+    def title(self, text):
+        pass
+
+    def setup(self, width=None, height=None, startx=None, starty=None):
+        if isinstance(width, int) and isinstance(height, int):
+            _screen.size = (width, height)
+
+    def screensize(self, canvwidth=None, canvheight=None, bg=None):
+        if bg:
+            self.bgcolor(bg)
+        if canvwidth and canvheight:
+            _screen.size = (canvwidth, canvheight)
+        return _screen.size or (400, 300)
+
+    def tracer(self, n=None, delay=None):
+        if n is not None:
+            _screen.instant = n == 0
+
+    def update(self):
+        pass
+
+    def delay(self, delay=None):
+        return 0
+
+    def colormode(self, cmode=None):
+        if cmode is None:
+            return _screen.colormode
+        _screen.colormode = 255 if cmode == 255 else 1.0
+
+    def mainloop(self):
+        _ide_flush()
+
+    done = mainloop
+
+    def exitonclick(self):
+        _ide_flush()
+
+    def bye(self):
+        _ide_flush()
+
+    def turtles(self):
+        return list(_screen.turtles)
+
+    def clear(self):
+        _items.clear()
+
+    clearscreen = clear
+
+    def reset(self):
+        for t in _screen.turtles:
+            t.reset()
+
+    resetscreen = reset
+
+    def window_width(self):
+        return (_screen.size or (640, 480))[0]
+
+    def window_height(self):
+        return (_screen.size or (640, 480))[1]
+
+    def listen(self, *a):
+        pass
+
+    def onkey(self, *a, **k):
+        _warn("keyboard events")
+
+    onkeypress = onkeyrelease = onkey
+
+    def onclick(self, *a, **k):
+        _warn("mouse events")
+
+    onscreenclick = onclick
+
+    def ontimer(self, *a, **k):
+        _warn("ontimer")
+
+    def textinput(self, title, prompt):
+        return input(f"{prompt} ")
+
+    def numinput(self, title, prompt, default=None, minval=None, maxval=None):
+        value = input(f"{prompt} ")
+        return float(value) if value.strip() else default
+
+    def register_shape(self, *a, **k):
+        pass
+
+    addshape = register_shape
+
+    def getcanvas(self):
+        return None
+
+    def mode(self, mode=None):
+        return "standard"
+
+
+_screen_obj = _Screen()
+
+
+def Screen():
+    return _screen_obj
+
+
+_pen = None
+
+
+def _getpen():
+    global _pen
+    if _pen is None:
+        _pen = Turtle()
+    return _pen
+
+
+def getturtle():
+    return _getpen()
+
+
+getpen = getturtle
+
+
+def _make(name, target):
+    def fn(*args, **kwargs):
+        obj = _getpen() if target == "t" else _screen_obj
+        return getattr(obj, name)(*args, **kwargs)
+
+    fn.__name__ = name
+    return fn
+
+
+for _n in [
+    "forward", "fd", "backward", "bk", "back", "right", "rt", "left", "lt", "goto", "setpos",
+    "setposition", "setx", "sety", "setheading", "seth", "home", "circle", "dot", "stamp",
+    "speed", "position", "pos", "xcor", "ycor", "heading", "towards", "distance", "pendown",
+    "pd", "down", "penup", "pu", "up", "isdown", "pensize", "width", "pencolor", "fillcolor",
+    "color", "begin_fill", "end_fill", "filling", "write", "hideturtle", "ht", "showturtle",
+    "st", "isvisible", "shape", "shapesize", "turtlesize", "degrees", "radians", "teleport",
+    "undo", "clearstamps", "clearstamp",
+]:
+    globals()[_n] = _make(_n, "t")
+
+for _n in [
+    "bgcolor", "title", "setup", "tracer", "update", "colormode", "screensize", "delay",
+    "mainloop", "done", "exitonclick", "bye", "turtles", "clearscreen", "resetscreen",
+    "listen", "onkey", "onkeypress", "onkeyrelease", "onscreenclick", "ontimer",
+    "window_width", "window_height", "textinput", "numinput", "register_shape", "addshape",
+]:
+    globals()[_n] = _make(_n, "s")
+
+
+def clear():
+    _getpen().clear()
+
+
+def reset():
+    _getpen().reset()
+
+
+def onclick(*a, **k):
+    _warn("mouse events")
+
+
+def getscreen():
+    return _screen_obj
+
+
+# --------------------------------------------------------------------------
+# Rendering
+# --------------------------------------------------------------------------
+
+
+def _esc(s):
+    return str(s).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
+
+
+def _turtle_shape(x, y, angle, fill, stroke):
+    # Classic arrowhead, pointing along the heading (SVG y axis points down).
+    return (
+        f'<polygon points="0,0 -10,-5 -7,0 -10,5" transform="translate({x:.2f},{-y:.2f}) rotate({-angle:.2f})" '
+        f'fill="{_esc(fill)}" stroke="{_esc(stroke)}" stroke-width="1"/>'
+    )
+
+
+def _ide_flush():
+    """Render the drawing (animating items added since the last render)."""
+    global _shown
+    if len(_items) == _shown or not _items:
+        return
+    xs, ys = [0.0], [0.0]
+    for kind, d, _, _ in _items:
+        if kind == "line":
+            xs += [d[0], d[2]]
+            ys += [d[1], d[3]]
+        elif kind == "fill":
+            xs += [p[0] for p in d[0]]
+            ys += [p[1] for p in d[0]]
+        else:
+            xs.append(d[0])
+            ys.append(d[1])
+    for t in _screen.turtles:
+        xs.append(t._x)
+        ys.append(t._y)
+    pad = 20
+    minx, maxx, miny, maxy = min(xs) - pad, max(xs) + pad, min(ys) - pad, max(ys) + pad
+    if _screen.size:
+        w, h = _screen.size
+        minx, maxx = min(minx, -w / 2), max(maxx, w / 2)
+        miny, maxy = min(miny, -h / 2), max(maxy, h / 2)
+    w, h = max(maxx - minx, 120), max(maxy - miny, 120)
+    total = sum(it[2] for it in _items[_shown:])
+    scale = 8.0 / total if total > 8.0 else 1.0
+    t = 0.0
+    parts = []
+    for i, (kind, d, dur, _owner) in enumerate(_items):
+        animate = i >= _shown and not _screen.instant
+        delay = t
+        if animate:
+            t += dur * scale
+        if kind == "line":
+            x1, y1, x2, y2, color, width = d
+            style = f' pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" style="animation:d {dur * scale:.3f}s linear {delay:.3f}s forwards"' if animate and dur > 0 else ""
+            if animate and dur == 0:
+                style = f' style="opacity:0;animation:f .01s {delay:.3f}s forwards"'
+            parts.append(f'<line x1="{x1:.2f}" y1="{-y1:.2f}" x2="{x2:.2f}" y2="{-y2:.2f}" stroke="{_esc(color)}" stroke-width="{width}" stroke-linecap="round"{style}/>')
+        else:
+            style = f' style="opacity:0;animation:f .01s {delay:.3f}s forwards"' if animate and delay > 0 else ""
+            if kind == "fill":
+                pts = " ".join(f"{x:.2f},{-y:.2f}" for x, y in d[0])
+                parts.append(f'<polygon points="{pts}" fill="{_esc(d[1])}" stroke="none"{style}/>')
+            elif kind == "dot":
+                x, y, size, color = d
+                parts.append(f'<circle cx="{x:.2f}" cy="{-y:.2f}" r="{size / 2:.2f}" fill="{_esc(color)}"{style}/>')
+            elif kind == "text":
+                x, y, text, align, font, color = d
+                anchor = {"left": "start", "center": "middle", "right": "end"}.get(align, "start")
+                fam, size = (font[0], font[1]) if isinstance(font, (tuple, list)) and len(font) > 1 else ("Arial", 8)
+                weight = "bold" if isinstance(font, (tuple, list)) and len(font) > 2 and "bold" in str(font[2]) else "normal"
+                parts.append(f'<text x="{x:.2f}" y="{-y:.2f}" text-anchor="{anchor}" font-family="{_esc(fam)}" font-size="{float(size) * 1.33:.1f}" font-weight="{weight}" fill="{_esc(color)}"{style}>{_esc(text)}</text>')
+            elif kind == "turtle":
+                parts.append(_turtle_shape(*d))
+    for tt in _screen.turtles:
+        if tt._visible:
+            parts.append(f'<g style="opacity:0;animation:f .01s {t:.3f}s forwards">{_turtle_shape(tt._x, tt._y, tt._heading * 360.0 / tt._degrees, tt._fillcolor, tt._pencolor)}</g>')
+    display_w = min(max(w, 240), 640)
+    svg = (
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{display_w:.0f}" height="{display_w * h / w:.0f}" '
+        f'viewBox="{minx:.2f} {-maxy:.2f} {w:.2f} {h:.2f}">'
+        "<style>@keyframes d{to{stroke-dashoffset:0}}@keyframes f{to{opacity:1}}<" "/style>"
+        f'<rect x="{minx:.2f}" y="{-maxy:.2f}" width="{w:.2f}" height="{h:.2f}" fill="{_esc(_screen.bg)}"/>'
+        + "".join(parts) + "</svg>"
+    )
+    _shown = len(_items)
+    import ide
+
+    ide._emit("image/svg+xml", svg, {"turtle": True})
+
+
+def _ide_reset():
+    """Start a fresh drawing (called before each program run)."""
+    global _pen, _shown
+    _items.clear()
+    _shown = 0
+    _screen.__init__()
+    _pen = None
 </script>
 <script type="module">
 // Console output renderer: a small terminal emulator that understands ANSI
@@ -1854,10 +3529,12 @@ class Terminal {
       el.src = `data:${mime};base64,${data}`;
       if (meta.width) el.style.width = `min(${meta.width}px, 100%)`;
       el.alt = 'Image output';
+      el.title = 'Click to download';
     } else if (mime === 'image/svg+xml') {
       el = document.createElement('img');
       el.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(data);
       el.alt = 'SVG output';
+      el.title = 'Click to download';
       el.style.background = 'transparent';
     } else if (mime === 'text/html') {
       // Sandboxed (no scripts) but same-origin so we can size it to its content.
@@ -2075,16 +3752,98 @@ display(SVG(f'''<svg xmlns="http://www.w3.org/2000/svg" width="220" height="220"
 </svg>'''))
 `,
   },
+  {
+    name: 'debug_demo.py',
+    title: 'Debugger walkthrough',
+    desc: 'Breakpoints, stepping, variables',
+    code: `# 1. Click left of line 9's number to set a breakpoint (a red dot).
+# 2. Press F5 (or the Debug button). Execution pauses on that line.
+# 3. Use Over / Into / Out (F10 / F11 / Shift+F11) and watch the
+#    Variables in the Debug panel. Hover a name to see its value.
+
+def bubble_sort(items):
+    items = list(items)
+    for end in range(len(items) - 1, 0, -1):
+        for i in range(end):
+            if items[i] > items[i + 1]:
+                items[i], items[i + 1] = items[i + 1], items[i]
+    return items
+
+print(bubble_sort([5, 2, 9, 1, 7]))
+`,
+  },
+  {
+    name: 'turtle_demo.py',
+    title: 'Turtle graphics',
+    desc: 'The classic turtle module',
+    code: `import turtle
+
+t = turtle.Turtle()
+turtle.bgcolor("black")
+t.speed(10)
+colors = ["red", "orange", "yellow", "green", "cyan", "purple"]
+for i in range(72):
+    t.pencolor(colors[i % len(colors)])
+    t.width(i // 18 + 1)
+    t.forward(i * 3)
+    t.left(59)
+turtle.done()
+`,
+  },
+  {
+    name: 'test_example.py',
+    title: 'Unit tests (pytest)',
+    desc: 'Run ▾ → Run tests',
+    code: `# Files named test_*.py are collected by pytest.
+# Use Run ▾ → "Run tests (pytest)" or the command palette.
+
+def slugify(text):
+    return "-".join(text.lower().split())
+
+def test_slugify_basic():
+    assert slugify("Hello World") == "hello-world"
+
+def test_slugify_spaces():
+    assert slugify("  many   spaces ") == "many-spaces"
+
+def test_deliberately_failing():
+    assert slugify("Python IDE") == "python_ide"
+`,
+  },
+  {
+    name: 'cells.py',
+    title: 'Code cells (# %%)',
+    desc: 'Run notebook-style cells',
+    code: `# Put the cursor in a cell and press Ctrl/Cmd+Shift+Enter to run just that
+# cell in the console (and move to the next one) — like a notebook.
+
+# %% Load data
+import random
+random.seed(1)
+data = [random.gauss(50, 12) for _ in range(500)]
+
+# %% Summarise
+import statistics as st
+print(f"mean={st.mean(data):.1f}  stdev={st.stdev(data):.1f}")
+
+# %% Plot
+import matplotlib.pyplot as plt
+plt.hist(data, bins=25, color="#4f8cff")
+plt.title("500 random samples")
+plt.show()
+`,
+  },
 ];
 
 const WELCOME = `# Welcome! This is real CPython running entirely in your browser
 # (via Pyodide / WebAssembly). Nothing is installed on your computer.
 #
-#   Ctrl/Cmd+Enter   run this file
-#   Shift+Enter      run the selection (or current line) in the console
-#   Console panel    an interactive Python prompt that sees your variables
+#   Ctrl/Cmd+Enter       run this file          F5   debug (click the gutter for breakpoints)
+#   Shift+Enter          run selection / line in the console
+#   Ctrl/Cmd+Shift+P     command palette: every feature is listed there
+#   Console panel        an interactive Python prompt that sees your variables
 #
-# Try the Examples menu for plots, pandas, input(), asyncio and more.
+# Try the Examples menu for the debugger, plots, pandas, turtle, tests and more.
 
 import sys
 import platform
@@ -2118,10 +3877,9 @@ function workerUrl() {
   return _workerUrl;
 }
 function pySources() {
-  return {
-    'ide.py': document.getElementById('py-ide').textContent,
-    'ide_mpl.py': document.getElementById('py-ide-mpl').textContent,
-  };
+  const out = {};
+  for (const el of document.querySelectorAll('script.pysrc')) out[el.dataset.name] = el.textContent;
+  return out;
 }
 
 // ===========================================================================
@@ -2155,7 +3913,7 @@ async function ensureIsolation() {
 // ===========================================================================
 // Settings
 // ===========================================================================
-const DEFAULT_SETTINGS = { theme: 'auto', fontSize: 14, autoInstall: true, clearOnRun: false, wrap: false };
+const DEFAULT_SETTINGS = { theme: 'auto', fontSize: 14, autoInstall: true, clearOnRun: false, wrap: false, lint: true, formatOnSave: false, ruler: false, args: '' };
 const settings = (() => {
   try { return { ...DEFAULT_SETTINGS, ...JSON.parse(localStorage.getItem('pyide:settings') || '{}') }; }
   catch { return { ...DEFAULT_SETTINGS }; }
@@ -2300,7 +4058,7 @@ function scheduleSave() {
 async function saveProject() {
   clearTimeout(saveTimer);
   snapshotFiles();
-  await store.set('project', { files: project.files, order: project.order, active: project.active });
+  await store.set('project', { files: project.files, order: project.order, active: project.active, breakpoints: collectBreakpoints() });
 }
 
 function uniqueName(base) {
@@ -2385,6 +4143,7 @@ function openFile(path) {
   updateCursorStatus();
   cm.focus();
   scheduleSave();
+  onActiveFileChanged();
 }
 
 function renderTabs() {
@@ -2515,6 +4274,7 @@ class Python {
       case 'display': term.rich(msg.mime, msg.data, msg.meta); break;
       case 'status': term.system(msg.text); break;
       case 'stdin-request': showStdinField(); break;
+      case 'debug-pause': onDebugPause(msg.payload); break;
       case 'error-location': markError(msg.path, msg.line); break;
       case 'ready':
         this.ready = true;
@@ -2604,7 +4364,8 @@ function setBusy(busy, label = 'Running') {
   if (busy) {
     ui.runStart = performance.now();
     const tick = () => {
-      if (py.waitingInput) setState('input', 'Waiting for input…');
+      if (debugState.paused) setState('input', `Paused at ${debugState.where}`);
+      else if (py.waitingInput) setState('input', 'Waiting for input…');
       else setState('busy', `${label}… ${fmtTime(performance.now() - ui.runStart)}`);
     };
     tick();
@@ -2613,6 +4374,7 @@ function setBusy(busy, label = 'Running') {
     removeStdinField();
     if (py.ready) setState('ready', 'Ready');
     focusRepl(false);
+    onIdle();
   }
 }
 
@@ -2634,6 +4396,7 @@ async function loadProject() {
     project.order = (saved.order || []).filter((p) => saved.files[p] && saved.files[p].text !== undefined);
     for (const [p, f] of Object.entries(saved.files)) if (f.text !== undefined && !project.order.includes(p)) project.order.push(p);
     project.active = saved.active;
+    project.breakpoints = saved.breakpoints || {};
   } else {
     project.files = { 'main.py': { text: WELCOME } };
     project.order = ['main.py'];
@@ -2684,11 +4447,33 @@ function createEditor() {
     styleActiveLine: true,
     lineWrapping: !!settings.wrap,
     keyMap: CodeMirror.keyMap.sublime ? 'sublime' : 'default',
-    extraKeys: {
+    gutters: ['cm-lint-gutter', 'cm-breakpoints', 'CodeMirror-linenumbers', 'CodeMirror-foldgutter'],
+    foldGutter: !!CodeMirror.fold,
+    foldOptions: CodeMirror.fold ? { rangeFinder: CodeMirror.fold.indent, minFoldSize: 1 } : undefined,
+    highlightSelectionMatches: { minChars: 2, showToken: false, delay: 150 },
+    rulers: settings.ruler ? [{ column: 79, className: 'cm-ruler' }] : [],
+    extraKeys: CodeMirror.normalizeKeyMap({
+      F5: () => (debugState.paused ? debugCommand('continue') : runFile('debug')),
+      'Shift-F5': () => stop(),
+      F9: () => toggleBreakpoint(cm.getCursor().line),
+      F10: () => debugCommand('next'),
+      F11: () => debugCommand('step'),
+      'Shift-F11': () => debugCommand('return'),
+      F12: () => gotoDefinition(),
+      'Shift-F12': () => findReferences(),
+      F2: () => renameSymbol(),
+      'Shift-Alt-F': () => formatDocument(),
+      [`${mod}-Shift-Enter`]: () => runCell(),
+      'Ctrl-Q': (ed) => ed.foldCode?.(ed.getCursor()),
+      [`${mod}-P`]: () => openPalette(''),
+      [`${mod}-Shift-P`]: () => openPalette('>'),
+      [`${mod}-Shift-O`]: () => openPalette('@'),
+      [`${mod}-Shift-F`]: () => openSearch(),
+      'Ctrl-G': () => openPalette(':'),
       [`${mod}-Enter`]: () => runFile(),
       'Shift-Enter': () => runSelection(),
       'Ctrl-Space': () => editorComplete(),
-      [`${mod}-S`]: () => { saveProject().then(() => toast('Saved in this browser')); },
+      [`${mod}-S`]: () => saveCommand(),
       [`${mod}-/`]: 'toggleComment',
       'Alt-G': 'jumpToLine',
       Tab: (ed) => {
@@ -2696,8 +4481,7 @@ function createEditor() {
         else ed.replaceSelection(' '.repeat(4 - (ed.getCursor().ch % 4)), 'end', '+input');
       },
       'Shift-Tab': (ed) => ed.indentSelection('subtract'),
-      'Ctrl-L': false,
-    },
+    }),
   });
   window.cm = cm;
   cm.on('changes', (ed) => {
@@ -2712,6 +4496,7 @@ function createEditor() {
       setTimeout(() => editorComplete(), 0);
     }
   });
+  setupEditorFeatures(cm);
 }
 
 function updateCursorStatus() {
@@ -2735,6 +4520,7 @@ async function main() {
   updateCursorStatus();
   await importSharedFromHash();
   wireUi();
+  initFeatures();
   renderExamples();
   restoreSplit();
 
@@ -2793,20 +4579,28 @@ function runTarget() {
   return project.order.find((p) => p === 'main.py') || project.order.find((p) => p.endsWith('.py'));
 }
 
-async function runFile() {
+async function runFile(mode = 'run') {
   if (!py.ready || ui.busy) return;
+  if (typeof mode !== 'string') mode = 'run';
   const path = runTarget();
   if (!path) { toast('No .py file to run'); return; }
   saveProject();
   if (settings.clearOnRun) term.clear();
   showPanel('console');
   clearErrorMarks();
-  term.rule(`python ${path}`);
-  setBusy(true);
+  const args = splitArgs(settings.args || '');
+  const breakpoints = collectBreakpoints();
+  const stopOnEntry = mode === 'debug' && !Object.values(breakpoints).some((l) => l.length);
+  const verb = { run: 'python', debug: 'debug', profile: 'profile' }[mode] || 'python';
+  term.rule(`${verb} ${path}${args.length ? ' ' + args.join(' ') : ''}${stopOnEntry ? '  (no breakpoints: pausing on the first line)' : ''}`);
+  setBusy(true, mode === 'debug' ? 'Debugging' : mode === 'profile' ? 'Profiling' : 'Running');
+  debugState.active = mode === 'debug';
   const t0 = performance.now();
   let status = 'ok';
   try {
-    status = await py.call('run', { ...collectDirty(), main: path, autoInstall: settings.autoInstall });
+    status = await py.call('run', {
+      ...collectDirty(), main: path, autoInstall: settings.autoInstall, args, mode, breakpoints, stopOnEntry,
+    });
   } catch (err) {
     status = 'error';
     if (py.worker) term.write(String(err.message || err) + '\n', 'stderr');
@@ -2831,6 +4625,7 @@ async function runSelection() {
   if (!code.trim()) return;
   await syncFiles();
   await replExecute(code, true);
+  cm.focus();
 }
 
 function dedent(text) {
@@ -2847,6 +4642,7 @@ async function syncFiles() {
 
 function stop() {
   if (!ui.busy) return;
+  if (debugState.paused) { debugCommand('quit'); return; }
   const btn = $('#stop-btn');
   if (btn.dataset.force === '1') {
     btn.dataset.force = '';
@@ -3095,11 +4891,15 @@ function editorComplete() {
 // Side panels
 // ===========================================================================
 function showPanel(name) {
-  for (const tab of document.querySelectorAll('.ptab')) tab.classList.toggle('active', tab.dataset.panel === name);
-  for (const p of ['console', 'files', 'packages']) $(`#panel-${p}`).hidden = p !== name;
+  for (const tab of document.querySelectorAll('.ptab')) {
+    tab.classList.toggle('active', tab.dataset.panel === name);
+    if (tab.dataset.panel === name) tab.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }
+  for (const p of document.querySelectorAll('.side-pane > .panel')) p.hidden = p.id !== `panel-${name}`;
   $('#clear-btn').hidden = name !== 'console';
   if (name === 'files') refreshFiles();
   if (name === 'packages') refreshPackages();
+  onPanelShown(name);
 }
 
 async function refreshFiles() {
@@ -3192,6 +4992,10 @@ async function uploadFiles(fileList) {
   let count = 0;
   for (const file of fileList) {
     const bytes = new Uint8Array(await file.arrayBuffer());
+    if (/\.zip$/i.test(file.name) && py.ready && !ui.busy && confirm(`Extract ${file.name} into your project?\n\nOK = extract its files, Cancel = keep it as a single .zip file`)) {
+      count += await importZip(bytes);
+      continue;
+    }
     const text = TEXT_EXT.test(file.name) || !/\.[a-z0-9]+$/i.test(file.name) ? tryDecodeText(bytes) : null;
     if (text !== null && bytes.length < 1024 * 1024) {
       addTextFile(file.name, text, { open: /\.pyi?$/i.test(file.name), overwrite: true });
@@ -3408,7 +5212,7 @@ function restoreSplit() {
 }
 
 function wireUi() {
-  $('#run-btn').addEventListener('click', runFile);
+  $('#run-btn').addEventListener('click', () => runFile());
   $('#stop-btn').addEventListener('click', stop);
   $('#restart-btn').addEventListener('click', () => restart());
   $('#share-btn').addEventListener('click', share);
@@ -3492,7 +5296,7 @@ function wireUi() {
   // Global shortcuts
   document.addEventListener('keydown', (e) => {
     const mod = e.ctrlKey || e.metaKey;
-    if (mod && e.key === 'Enter' && !e.target.closest('.CodeMirror')) { e.preventDefault(); runFile(); }
+    if (mod && e.key === 'Enter' && !e.shiftKey && !e.target.closest('.CodeMirror')) { e.preventDefault(); runFile(); }
     if (e.ctrlKey && (e.key === 'c' || e.key === 'C') && ui.busy && !window.getSelection().toString() && !e.target.matches('input, textarea')) {
       e.preventDefault();
       stop();
@@ -3574,6 +5378,1087 @@ function wireUi() {
   window.addEventListener('pagehide', () => saveProject());
 }
 
+
+// ===========================================================================
+// IDE features: debugger, breakpoints, lint/problems, formatting, code
+// intelligence, outline, search, command palette, variables, cells, tests.
+// ===========================================================================
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const isPy = (path) => /\.pyi?$/i.test(path || '');
+const firstLine = (s) => String(s || '').trim().split('\n').pop().slice(0, 300);
+
+function splitArgs(text) {
+  const out = [];
+  const re = /"((?:\\.|[^"\\])*)"|'([^']*)'|(\S+)/g;
+  let m;
+  while ((m = re.exec(text))) out.push(m[1] !== undefined ? m[1].replace(/\\(.)/g, '$1') : m[2] !== undefined ? m[2] : m[3]);
+  return out;
+}
+
+// ---------------------------------------------------------------------------
+// Breakpoints (stored as CodeMirror line handles so they follow edits)
+// ---------------------------------------------------------------------------
+const bpLines = new Map(); // path -> Set<LineHandle>
+
+function bpMarker() {
+  const el = document.createElement('div');
+  el.className = 'bp-dot';
+  el.title = 'Breakpoint (click to remove)';
+  return el;
+}
+
+function toggleBreakpoint(line, path = project.active) {
+  const doc = docs.get(path);
+  if (!doc || !isPy(path)) return;
+  const handle = doc.getLineHandle(line);
+  if (!handle) return;
+  let set = bpLines.get(path);
+  if (!set) bpLines.set(path, (set = new Set()));
+  if (set.has(handle)) {
+    set.delete(handle);
+    if (cm.getDoc() === doc) cm.setGutterMarker(handle, 'cm-breakpoints', null);
+  } else {
+    set.add(handle);
+    if (cm.getDoc() === doc) cm.setGutterMarker(handle, 'cm-breakpoints', bpMarker());
+  }
+  breakpointsChanged();
+}
+
+function clearAllBreakpoints() {
+  for (const [path, set] of bpLines) {
+    if (cm.getDoc() === docs.get(path)) for (const h of set) cm.setGutterMarker(h, 'cm-breakpoints', null);
+  }
+  bpLines.clear();
+  breakpointsChanged();
+}
+
+function collectBreakpoints() {
+  const out = {};
+  for (const [path, set] of bpLines) {
+    const doc = docs.get(path);
+    if (!doc) continue;
+    const lines = new Set();
+    for (const h of set) {
+      const n = doc.getLineNumber(h);
+      if (n === null) set.delete(h);
+      else lines.add(n + 1);
+    }
+    if (lines.size) out[path] = [...lines].sort((a, b) => a - b);
+  }
+  return out;
+}
+
+function restoreBreakpoints() {
+  for (const [path, lines] of Object.entries(project.breakpoints || {})) {
+    const doc = docs.get(path);
+    if (!doc) continue;
+    const set = new Set();
+    for (const n of lines) if (n - 1 <= doc.lastLine()) set.add(doc.getLineHandle(n - 1));
+    bpLines.set(path, set);
+  }
+}
+
+function applyBreakpointMarkers() {
+  const set = bpLines.get(project.active);
+  if (!set) return;
+  for (const h of set) cm.setGutterMarker(h, 'cm-breakpoints', bpMarker());
+}
+
+function breakpointsChanged() {
+  scheduleSave();
+  if (debugState.paused) debugCommand('breaks ' + JSON.stringify(collectBreakpoints()));
+  if (!$('#panel-debug').hidden) renderDebugPanel();
+}
+
+// ---------------------------------------------------------------------------
+// Debugger UI
+// ---------------------------------------------------------------------------
+const debugState = {
+  active: false,
+  paused: false,
+  state: null,
+  where: '',
+  line: null, // {doc, handle} of the highlighted line
+  evalLog: [],
+  watches: (() => { try { return JSON.parse(localStorage.getItem('pyide:watches') || '[]'); } catch { return []; } })(),
+};
+
+function saveWatches() {
+  try { localStorage.setItem('pyide:watches', JSON.stringify(debugState.watches)); } catch { /* ignore */ }
+}
+
+function onDebugPause(state) {
+  const first = !debugState.paused && !debugState.state;
+  debugState.active = true;
+  debugState.paused = true;
+  debugState.state = state;
+  debugState.where = `${state.file}:${state.line}`;
+  if (state.evaluated) debugState.evalLog.push(state.evaluated);
+  if (!debugState.watchesSynced) {
+    // First pause of this session: tell Python our watch expressions (it
+    // answers with a fresh state that includes their values).
+    debugState.watchesSynced = true;
+    if (debugState.watches.length) {
+      py.answerStdin('watch ' + JSON.stringify(debugState.watches));
+      return;
+    }
+  }
+  clearDebugLine();
+  if (docs.has(state.file)) {
+    if (project.active !== state.file) openFile(state.file);
+    const doc = docs.get(state.file);
+    const handle = doc.addLineClass(state.line - 1, 'background', 'cm-debug-line');
+    debugState.line = { doc, handle };
+    cm.setCursor({ line: state.line - 1, ch: 0 });
+    cm.scrollIntoView({ line: state.line - 1, ch: 0 }, 120);
+  }
+  updateDebugBar();
+  if ($('#panel-debug').hidden && (first || !$('#panel-console').hidden || state.postMortem)) showPanel('debug');
+  else renderDebugPanel();
+  setState('input', `Paused at ${debugState.where}`);
+}
+
+function clearDebugLine() {
+  if (debugState.line) {
+    debugState.line.doc.removeLineClass(debugState.line.handle, 'background', 'cm-debug-line');
+    debugState.line = null;
+  }
+}
+
+function debugCommand(cmd) {
+  if (!debugState.paused) return;
+  const word = cmd.split(' ')[0];
+  if (['continue', 'step', 'next', 'return', 'quit'].includes(word)) {
+    debugState.paused = false;
+    clearDebugLine();
+    updateDebugBar();
+    setState('busy', word === 'quit' ? 'Stopping…' : 'Running…');
+  }
+  py.answerStdin(cmd);
+}
+
+function updateDebugBar() {
+  const bar = $('#debug-bar');
+  bar.hidden = !debugState.active;
+  for (const b of bar.querySelectorAll('button[data-cmd]')) b.disabled = !debugState.paused;
+  const s = debugState.state;
+  $('#debug-where').textContent = debugState.paused && s
+    ? (s.postMortem ? `Error in ${s.frames[s.index].name}() — ${debugState.where}` : `Paused in ${s.frames[s.index].name}() — ${debugState.where}`)
+    : 'Running…';
+  const startBtn = $('#debug-btn');
+  if (startBtn) startBtn.disabled = ui.busy || !py.ready;
+}
+
+function endDebugSession() {
+  debugState.active = false;
+  debugState.paused = false;
+  debugState.state = null;
+  debugState.watchesSynced = false;
+  clearDebugLine();
+  updateDebugBar();
+  if (!$('#panel-debug').hidden) renderDebugPanel();
+}
+
+function varTable(vars, emptyText) {
+  if (!vars.length) return `<p class="muted small">${esc(emptyText)}</p>`;
+  return `<table class="vars"><tbody>${vars.map((v) => `<tr><td class="vn">${esc(v.name)}</td><td class="vt">${esc(v.type)}${v.size ? `<span class="vs">${esc(v.size)}</span>` : ''}</td><td class="vv" title="${esc(v.value)}">${esc(v.value)}</td></tr>`).join('')}</tbody></table>`;
+}
+
+function renderDebugPanel() {
+  const panel = $('#debug-content');
+  const s = debugState.paused ? debugState.state : null;
+  const bps = collectBreakpoints();
+  const bpList = Object.entries(bps).flatMap(([p, lines]) => lines.map((l) => ({ p, l })));
+  let html = '';
+  if (!s) {
+    html += `<div class="dbg-intro"><p><b>${debugState.active ? 'Running…' : 'Not debugging.'}</b> ${debugState.active ? 'The program will pause at the next breakpoint.' : 'Press <kbd>F5</kbd> or the <b>Debug</b> button to start.'}</p>
+      <p class="muted small">Click left of a line number (or press <kbd>F9</kbd>) to set a breakpoint. With no breakpoints, debugging pauses on the first line. Uncaught errors pause so you can inspect the variables. In the console, <code>%debug</code> inspects the last error.</p></div>`;
+  } else {
+    if (s.exception) html += `<div class="dbg-exc">${esc(s.exception)}</div>`;
+    html += '<h4>Call stack</h4><ol class="stack">';
+    s.frames.map((f, i) => ({ f, i })).reverse().forEach(({ f, i }) => {
+      html += `<li class="${i === s.index ? 'cur' : ''}" data-frame="${i}"><span class="fn">${esc(f.name)}</span><span class="loc">${esc(f.file)}:${f.line}</span></li>`;
+    });
+    html += '</ol>';
+    html += `<h4>Variables</h4>${varTable(s.locals, 'No local variables')}`;
+    if (s.globals && s.globals.length) html += `<details class="globals"><summary>Globals (${s.globals.length})</summary>${varTable(s.globals, '')}</details>`;
+  }
+  html += '<h4>Watch</h4><ul class="watches">';
+  const wv = s ? s.watches || [] : [];
+  debugState.watches.forEach((w, i) => {
+    const r = wv.find((x) => x.expr === w);
+    html += `<li><span class="we">${esc(w)}</span><span class="wv ${r && r.type === 'error' ? 'err' : ''}">${r ? esc(r.value) : '<span class="muted">—</span>'}</span><button data-unwatch="${i}" title="Remove">×</button></li>`;
+  });
+  html += `</ul><input id="watch-input" class="filter" placeholder="Add watch expression…" spellcheck="false">`;
+  if (s) {
+    html += '<h4>Evaluate</h4><div class="evals">';
+    for (const e of debugState.evalLog.slice(-30)) html += `<div><span class="p">&gt;</span> ${esc(e.expr)}<br><span class="${e.type === 'error' ? 'err' : 'ok'}">${esc(e.value)}</span></div>`;
+    html += `</div><input id="eval-input" class="filter" placeholder="Expression or statement in the selected frame…" spellcheck="false">`;
+  }
+  html += `<h4>Breakpoints <span class="muted">(${bpList.length})</span></h4>`;
+  if (!bpList.length) html += '<p class="muted small">None</p>';
+  else {
+    html += '<ul class="bplist">' + bpList.map(({ p, l }) => `<li data-jump="${esc(p)}:${l}"><span class="bp-dot inline"></span>${esc(p)}:${l}</li>`).join('') + '</ul>';
+    html += '<button id="clear-bps" class="btn small ghost">Remove all breakpoints</button>';
+  }
+  panel.innerHTML = html;
+  panel.querySelectorAll('[data-frame]').forEach((li) => li.addEventListener('click', () => debugCommand('frame ' + li.dataset.frame)));
+  panel.querySelectorAll('[data-unwatch]').forEach((b) => b.addEventListener('click', () => {
+    debugState.watches.splice(+b.dataset.unwatch, 1);
+    saveWatches();
+    if (debugState.paused) debugCommand('watch ' + JSON.stringify(debugState.watches));
+    else renderDebugPanel();
+  }));
+  panel.querySelectorAll('[data-jump]').forEach((li) => li.addEventListener('click', () => {
+    const [p, l] = [li.dataset.jump.slice(0, li.dataset.jump.lastIndexOf(':')), +li.dataset.jump.split(':').pop()];
+    jumpTo(p, l);
+  }));
+  $('#clear-bps')?.addEventListener('click', clearAllBreakpoints);
+  $('#watch-input').addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' || !e.target.value.trim()) return;
+    debugState.watches.push(e.target.value.trim());
+    saveWatches();
+    if (debugState.paused) debugCommand('watch ' + JSON.stringify(debugState.watches));
+    else renderDebugPanel();
+    setTimeout(() => $('#watch-input')?.focus(), 50);
+  });
+  const ev = $('#eval-input');
+  if (ev) {
+    ev.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' || !e.target.value.trim()) return;
+      debugCommand('eval ' + e.target.value.trim());
+      setTimeout(() => $('#eval-input')?.focus(), 80);
+    });
+    const evals = panel.querySelector('.evals');
+    evals.scrollTop = evals.scrollHeight;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Lint / problems
+// ---------------------------------------------------------------------------
+const problems = new Map(); // path -> [{line, col, endLine, endCol, msg, severity}]
+const lintMarks = new Map(); // path -> TextMarker[]
+let lintTimer = null;
+
+function scheduleLint(delay = 700) {
+  clearTimeout(lintTimer);
+  lintTimer = setTimeout(lintActive, delay);
+}
+
+async function lintActive() {
+  const path = project.active;
+  if (!settings.lint) { setProblems(path, []); return; }
+  if (!py.ready || ui.busy || !isPy(path)) return;
+  const doc = docs.get(path);
+  const gen = doc.changeGeneration();
+  let res;
+  try {
+    res = await withTimeout(py.call('lint', { source: doc.getValue(), path, pyflakes: true }), 30000);
+  } catch { return; }
+  if (doc.changeGeneration() !== gen || !docs.has(path)) return;
+  setProblems(path, res);
+}
+
+function setProblems(path, list) {
+  const doc = docs.get(path);
+  for (const m of lintMarks.get(path) || []) m.clear();
+  lintMarks.set(path, []);
+  problems.set(path, list);
+  if (doc) {
+    const marks = [];
+    for (const p of list) {
+      const line = Math.min(Math.max(p.line - 1, 0), doc.lastLine());
+      const text = doc.getLine(line);
+      let from = Math.min(p.col || 0, text.length);
+      let to;
+      if (p.endLine === p.line && p.endCol > from) to = { line, ch: p.endCol };
+      else {
+        const m = /^[\w.]+/.exec(text.slice(from));
+        to = { line, ch: from + (m ? m[0].length : 1) };
+        if (to.ch > text.length) { from = Math.max(0, text.length - 1); to = { line, ch: text.length }; }
+      }
+      marks.push(doc.markText({ line, ch: from }, to, {
+        className: p.severity === 'error' ? 'cm-lint-error' : 'cm-lint-warning',
+        attributes: { title: p.msg },
+      }));
+    }
+    lintMarks.set(path, marks);
+    if (cm.getDoc() === doc) {
+      cm.clearGutter('cm-lint-gutter');
+      for (const p of list) {
+        const el = document.createElement('div');
+        el.className = 'lint-marker ' + p.severity;
+        el.title = list.filter((q) => q.line === p.line).map((q) => q.msg).join('\n');
+        cm.setGutterMarker(Math.min(p.line - 1, doc.lastLine()), 'cm-lint-gutter', el);
+      }
+    }
+  }
+  updateProblemsStatus();
+  if (!$('#panel-problems').hidden) renderProblems();
+}
+
+function updateProblemsStatus() {
+  let e = 0, w = 0;
+  for (const [path, list] of problems) {
+    if (!docs.has(path)) continue;
+    for (const p of list) p.severity === 'error' ? e++ : w++;
+  }
+  const el = $('#st-problems');
+  el.innerHTML = `<span class="${e ? 'err' : ''}">⨯ ${e}</span> <span class="${w ? 'warn' : ''}">⚠ ${w}</span>`;
+  el.title = `${e} error(s), ${w} warning(s) — click to show Problems`;
+  const badge = $('.ptab[data-panel=problems] .badge');
+  badge.textContent = e + w || '';
+  badge.hidden = !(e + w);
+}
+
+function renderProblems() {
+  const box = $('#problems-list');
+  let html = '';
+  for (const path of project.order) {
+    const list = problems.get(path);
+    if (!list || !list.length) continue;
+    html += `<div class="pgroup"><div class="pfile">${esc(path)} <span class="muted">(${list.length})</span></div>`;
+    for (const p of list) {
+      html += `<div class="pitem" data-path="${esc(path)}" data-line="${p.line}" data-col="${p.col || 0}"><span class="sev ${p.severity}">${p.severity === 'error' ? '⨯' : '⚠'}</span><span class="pmsg">${esc(p.msg)}</span><span class="muted">${p.line}:${(p.col || 0) + 1}</span></div>`;
+    }
+    html += '</div>';
+  }
+  box.innerHTML = html || `<p class="muted">${settings.lint ? 'No problems detected in the files you have opened. 🎉' : 'Linting is turned off in Settings.'}</p>`;
+  box.querySelectorAll('.pitem').forEach((el) => el.addEventListener('click', () => {
+    jumpTo(el.dataset.path, +el.dataset.line);
+    cm.setCursor({ line: +el.dataset.line - 1, ch: +el.dataset.col });
+  }));
+}
+
+// ---------------------------------------------------------------------------
+// Formatting
+// ---------------------------------------------------------------------------
+function applyFullText(doc, text) {
+  if (doc.getValue() === text) return false;
+  const cursor = doc.getCursor();
+  const active = cm.getDoc() === doc;
+  const scroll = active ? cm.getScrollInfo() : null;
+  const last = doc.lastLine();
+  doc.replaceRange(text, { line: 0, ch: 0 }, { line: last, ch: doc.getLine(last).length }, '+refactor');
+  doc.setCursor({ line: Math.min(cursor.line, doc.lastLine()), ch: cursor.ch });
+  if (active) cm.scrollTo(scroll.left, scroll.top);
+  return true;
+}
+
+async function formatDocument() {
+  if (!isPy(project.active)) { toast('Formatting is available for .py files'); return; }
+  if (!py.ready || ui.busy) { toast('Python is busy'); return; }
+  const doc = cm.getDoc();
+  toast('Formatting with Black… (first use downloads it)', 8000);
+  try {
+    const out = await withTimeout(py.call('format', { source: doc.getValue() }), 60000);
+    toast(applyFullText(doc, out) ? 'Formatted with Black' : 'Already formatted');
+  } catch (err) {
+    toast('Format failed: ' + firstLine(err.message), 5000);
+  }
+}
+
+async function saveCommand() {
+  if (settings.formatOnSave && isPy(project.active) && py.ready && !ui.busy) await formatDocument();
+  await saveProject();
+  toast('Saved in this browser');
+}
+
+// ---------------------------------------------------------------------------
+// Code intelligence: hover, go to definition, references, rename, signatures
+// ---------------------------------------------------------------------------
+function intelReady(quiet) {
+  if (!py.ready || ui.busy || debugState.paused) {
+    if (!quiet) toast(debugState.paused ? 'Not available while paused in the debugger' : 'Python is busy');
+    return false;
+  }
+  return isPy(project.active);
+}
+
+async function intel(kind, pos, extra = {}, timeout = 15000) {
+  if (['goto', 'references', 'rename'].includes(kind)) await syncFiles();
+  return withTimeout(py.call('intel', {
+    kind, source: cm.getValue(), line: pos.line + 1, column: pos.ch, path: project.active, ...extra,
+  }), timeout);
+}
+
+const tooltip = { timer: null, el: null, sig: null };
+
+function showTip(el, html, x, y, above = false) {
+  el.innerHTML = html;
+  el.hidden = false;
+  const r = el.getBoundingClientRect();
+  let left = Math.min(x, window.innerWidth - r.width - 8);
+  let top = above ? y - r.height - 6 : y + 18;
+  if (!above && top + r.height > window.innerHeight - 8) top = y - r.height - 8;
+  if (above && top < 8) top = y + 22;
+  el.style.left = Math.max(8, left) + 'px';
+  el.style.top = Math.max(8, top) + 'px';
+}
+
+function hideTip() {
+  clearTimeout(tooltip.timer);
+  $('#tooltip').hidden = true;
+}
+
+function hideSig() {
+  $('#sigtip').hidden = true;
+}
+
+function hoverHtml(r) {
+  const head = r.desc ? `<code>${esc(r.desc)}</code>` : `<code>${esc(r.full || r.name)}</code>`;
+  return `<div class="tip-head">${head}<span class="tip-type">${esc(r.type)}</span></div>${r.doc ? `<pre>${esc(r.doc)}</pre>` : ''}`;
+}
+
+async function hoverAt(x, y) {
+  if (document.querySelector('.CodeMirror-hints')) return;
+  const pos = cm.coordsChar({ left: x, top: y }, 'window');
+  const word = cm.findWordAt(pos);
+  const text = cm.getRange(word.anchor, word.head);
+  if (!/^[A-Za-z_]\w*$/.test(text)) return;
+  const a = cm.charCoords(word.anchor, 'window'), b = cm.charCoords(word.head, 'window');
+  if (x < a.left - 1 || x > b.right + 1 || y < a.top - 1 || y > a.bottom + 1) return;
+  if (debugState.paused && debugState.state) {
+    const s = debugState.state;
+    const v = [...s.locals, ...(s.globals || [])].find((q) => q.name === text);
+    if (v) showTip($('#tooltip'), `<div class="tip-head"><code>${esc(v.name)}</code><span class="tip-type">${esc(v.type)}${v.size ? ' · ' + esc(v.size) : ''}</span></div><pre>${esc(v.value)}</pre>`, x, y);
+    return;
+  }
+  if (!intelReady(true)) return;
+  try {
+    const r = await intel('hover', { line: pos.line, ch: word.head.ch }, {}, 8000);
+    if (r && (r.doc || r.desc)) showTip($('#tooltip'), hoverHtml(r), x, y);
+  } catch { /* busy / timeout */ }
+}
+
+async function gotoDefinition(pos = cm.getCursor()) {
+  if (!intelReady()) return;
+  try {
+    const res = await intel('goto', pos);
+    const target = res.find((r) => r.inProject) || res[0];
+    if (!target) { toast('No definition found'); return; }
+    if (target.inProject && docs.has(target.file)) {
+      jumpTo(target.file, target.line);
+      cm.setCursor({ line: target.line - 1, ch: target.col || 0 });
+    } else {
+      const hover = await intel('hover', pos).catch(() => null);
+      const c = cm.cursorCoords(pos, 'window');
+      if (hover) showTip($('#tooltip'), hoverHtml(hover) + `<div class="tip-foot">Defined in <code>${esc(target.module || target.file || 'built-in')}</code></div>`, c.left, c.top);
+      else toast(`Defined in ${target.module || 'a built-in module'}`);
+    }
+  } catch (err) {
+    toast('Go to definition failed: ' + firstLine(err.message));
+  }
+}
+
+async function findReferences(pos = cm.getCursor()) {
+  if (!intelReady()) return;
+  const word = cm.getRange(cm.findWordAt(pos).anchor, cm.findWordAt(pos).head);
+  try {
+    const refs = await intel('references', pos);
+    showResults(`References to ${word}`, refs.map((r) => ({ path: r.file, line: r.line, col: r.col, text: r.text, len: r.name.length })));
+  } catch (err) {
+    toast('Find references failed: ' + firstLine(err.message));
+  }
+}
+
+async function renameSymbol(pos = cm.getCursor()) {
+  if (!intelReady()) return;
+  const w = cm.findWordAt(pos);
+  const old = cm.getRange(w.anchor, w.head);
+  if (!/^[A-Za-z_]\w*$/.test(old)) { toast('Place the cursor on a name to rename it'); return; }
+  const name = prompt(`Rename "${old}" everywhere in the project to:`, old);
+  if (!name || name === old) return;
+  if (!/^[A-Za-z_]\w*$/.test(name)) { toast('Not a valid Python identifier'); return; }
+  try {
+    const changes = await intel('rename', pos, { newName: name });
+    let n = 0;
+    for (const [path, text] of Object.entries(changes)) if (docs.has(path) && applyFullText(docs.get(path), text)) n++;
+    toast(n ? `Renamed "${old}" → "${name}" in ${n} file${n === 1 ? '' : 's'}` : 'Nothing to rename');
+  } catch (err) {
+    toast('Rename failed: ' + firstLine(err.message), 5000);
+  }
+}
+
+async function signatureHelp() {
+  if (!intelReady(true)) return;
+  const pos = cm.getCursor();
+  try {
+    const sigs = await intel('signatures', pos, {}, 6000);
+    if (!sigs.length || cm.getCursor().line !== pos.line) { hideSig(); return; }
+    const s = sigs[0];
+    const params = s.params.map((p, i) => (i === s.index ? `<b>${esc(p)}</b>` : esc(p))).join(', ');
+    const c = cm.cursorCoords(pos, 'window');
+    showTip($('#sigtip'), `<code>${esc(s.name)}(${params})</code>${s.doc ? `<div class="tip-doc">${esc(s.doc)}</div>` : ''}`, c.left, c.top, true);
+  } catch { hideSig(); }
+}
+
+// ---------------------------------------------------------------------------
+// Outline (classes, functions, cells)
+// ---------------------------------------------------------------------------
+function computeOutline(doc = cm.getDoc()) {
+  const out = [];
+  let n = 0;
+  doc.eachLine((h) => {
+    const t = h.text;
+    let m = /^(\s*)(async\s+def|def|class)\s+([A-Za-z_]\w*)\s*(\([^)]*\)?)?/.exec(t);
+    if (m) out.push({ kind: m[2].includes('class') ? 'class' : 'def', name: m[3], args: m[2].includes('class') ? '' : (m[4] || '()').replace(/\)?$/, ')'), depth: Math.floor(m[1].replace(/\t/g, '    ').length / 4), line: n });
+    else if ((m = /^#\s*%%(.*)$/.exec(t))) out.push({ kind: 'cell', name: m[1].trim() || 'Cell', args: '', depth: 0, line: n });
+    n++;
+  });
+  return out;
+}
+
+let outlineTimer = null;
+function scheduleOutline() {
+  clearTimeout(outlineTimer);
+  outlineTimer = setTimeout(() => { if (!$('#panel-outline').hidden) renderOutline(); }, 400);
+}
+
+function renderOutline() {
+  const box = $('#outline-list');
+  const items = computeOutline();
+  $('#outline-file').textContent = project.active;
+  box.innerHTML = items.length
+    ? items.map((it) => `<li data-line="${it.line}" style="padding-left:${8 + it.depth * 16}px"><span class="okind ${it.kind}">${it.kind === 'class' ? 'C' : it.kind === 'cell' ? '§' : 'ƒ'}</span><span>${esc(it.name)}</span><span class="muted">${esc(it.args)}</span><span class="grow"></span><span class="muted small">${it.line + 1}</span></li>`).join('')
+    : '<li class="muted">No classes, functions or <code># %%</code> cells in this file.</li>';
+  box.querySelectorAll('li[data-line]').forEach((li) => li.addEventListener('click', () => jumpTo(project.active, +li.dataset.line + 1)));
+}
+
+// ---------------------------------------------------------------------------
+// Find in files / results list
+// ---------------------------------------------------------------------------
+function openSearch() {
+  showPanel('search');
+  const sel = cm.getSelection();
+  const input = $('#search-input');
+  if (sel && !sel.includes('\n')) input.value = sel;
+  input.focus();
+  input.select();
+  if (input.value) runSearch();
+}
+
+function searchRegex() {
+  const q = $('#search-input').value;
+  if (!q) return null;
+  const flags = $('#search-case').checked ? 'g' : 'gi';
+  let src = $('#search-regex').checked ? q : q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  if ($('#search-word').checked) src = `\\b${src}\\b`;
+  try { return new RegExp(src, flags); } catch { return undefined; }
+}
+
+function runSearch() {
+  const re = searchRegex();
+  if (re === undefined) { $('#search-summary').textContent = 'Invalid regular expression'; return; }
+  if (!re) { showResults('', []); return; }
+  const results = [];
+  for (const path of project.order) {
+    const doc = docs.get(path);
+    let n = 0;
+    doc.eachLine((h) => {
+      re.lastIndex = 0;
+      let m;
+      while ((m = re.exec(h.text)) && results.length < 2000) {
+        results.push({ path, line: n + 1, col: m.index, len: m[0].length || 1, text: h.text });
+        if (!m[0].length) re.lastIndex++;
+      }
+      n++;
+    });
+  }
+  showResults(null, results);
+}
+
+function replaceAll() {
+  const re = searchRegex();
+  if (!re) return;
+  const rep = $('#replace-input').value;
+  let files = 0, count = 0;
+  for (const path of project.order) {
+    const doc = docs.get(path);
+    const text = doc.getValue();
+    const matches = text.match(re);
+    if (!matches) continue;
+    count += matches.length;
+    files++;
+    applyFullText(doc, text.replace(re, $('#search-regex').checked ? rep : () => rep));
+  }
+  toast(count ? `Replaced ${count} occurrence${count === 1 ? '' : 's'} in ${files} file${files === 1 ? '' : 's'}` : 'No matches');
+  runSearch();
+}
+
+function showResults(title, results) {
+  if (title !== null) {
+    showPanel('search');
+    $('#search-title').textContent = title;
+    $('#search-title').hidden = !title;
+  } else {
+    $('#search-title').hidden = true;
+  }
+  const files = new Set(results.map((r) => r.path));
+  $('#search-summary').textContent = results.length
+    ? `${results.length}${results.length >= 2000 ? '+' : ''} result${results.length === 1 ? '' : 's'} in ${files.size} file${files.size === 1 ? '' : 's'}`
+    : ($('#search-input').value || title ? 'No results' : '');
+  let html = '', last = null;
+  for (const r of results.slice(0, 2000)) {
+    if (r.path !== last) {
+      if (last !== null) html += '</div>';
+      html += `<div class="pgroup"><div class="pfile">${esc(r.path)}</div>`;
+      last = r.path;
+    }
+    const t = r.text || '';
+    const start = Math.max(0, r.col - 40);
+    const snippet = (start ? '…' : '') + esc(t.slice(start, r.col)) + `<mark>${esc(t.slice(r.col, r.col + r.len))}</mark>` + esc(t.slice(r.col + r.len, r.col + r.len + 80));
+    html += `<div class="pitem" data-path="${esc(r.path)}" data-line="${r.line}" data-col="${r.col}" data-len="${r.len}"><span class="muted lnum">${r.line}</span><span class="pmsg code">${snippet}</span></div>`;
+  }
+  if (last !== null) html += '</div>';
+  const box = $('#search-results');
+  box.innerHTML = html;
+  box.querySelectorAll('.pitem').forEach((el) => el.addEventListener('click', () => {
+    jumpTo(el.dataset.path, +el.dataset.line);
+    const line = +el.dataset.line - 1, col = +el.dataset.col;
+    cm.setSelection({ line, ch: col }, { line, ch: col + +el.dataset.len });
+  }));
+}
+
+// ---------------------------------------------------------------------------
+// Variables explorer
+// ---------------------------------------------------------------------------
+let lastVars = [];
+async function refreshVariables() {
+  const box = $('#vars-list');
+  if (!py.ready) return;
+  if (ui.busy) { if (!lastVars.length) box.innerHTML = '<p class="muted">Updates when the program finishes.</p>'; return; }
+  try {
+    lastVars = await withTimeout(py.call('variables'), 5000);
+  } catch { return; }
+  renderVariables();
+}
+
+function renderVariables() {
+  const f = $('#vars-filter').value.toLowerCase().trim();
+  const rows = lastVars.filter((v) => !f || v.name.toLowerCase().includes(f) || v.type.toLowerCase().includes(f));
+  const box = $('#vars-list');
+  if (!lastVars.length) {
+    box.innerHTML = '<p class="muted">No variables yet. Run a file or type in the console; its variables appear here.</p>';
+    return;
+  }
+  box.innerHTML = `<table class="vars full"><thead><tr><th>Name</th><th>Type</th><th>Size</th><th>Value</th></tr></thead><tbody>${rows.map((v) => `<tr data-name="${esc(v.name)}" title="Click to show in the console"><td class="vn">${esc(v.name)}</td><td class="vt">${esc(v.type)}</td><td class="vs2">${esc(v.size)}</td><td class="vv">${esc(v.value)}</td></tr>`).join('')}</tbody></table>`;
+  box.querySelectorAll('tr[data-name]').forEach((tr) => tr.addEventListener('click', async () => {
+    if (!py.ready || ui.busy) return;
+    showPanel('console');
+    term.echo('>>>', `display(${tr.dataset.name})`);
+    try { await py.call('inspectVariable', { name: tr.dataset.name }); } catch { /* ignore */ }
+  }));
+}
+
+// ---------------------------------------------------------------------------
+// Cells, tests, profiling, zip import
+// ---------------------------------------------------------------------------
+async function runCell() {
+  if (!py.ready || ui.busy) return;
+  const doc = cm.getDoc();
+  const isHeader = (i) => /^#\s*%%/.test(doc.getLine(i));
+  let hasCells = false;
+  for (let i = 0; i <= doc.lastLine(); i++) if (isHeader(i)) { hasCells = true; break; }
+  if (!hasCells) { runSelection(); return; }
+  const cur = cm.getCursor().line;
+  let start = cur;
+  while (start > 0 && !isHeader(start)) start--;
+  if (isHeader(start)) start++;
+  let end = cur + (isHeader(cur) ? 1 : 0);
+  while (end <= doc.lastLine() && !isHeader(end)) end++;
+  const code = doc.getRange({ line: start, ch: 0 }, { line: end - 1, ch: doc.getLine(end - 1)?.length ?? 0 });
+  if (end <= doc.lastLine()) cm.setCursor({ line: Math.min(end + 1, doc.lastLine()), ch: 0 });
+  if (!code.trim()) return;
+  await syncFiles();
+  await replExecute(dedent(code).replace(/\s+$/, ''), true);
+  cm.focus();
+}
+
+async function runTests() {
+  if (!py.ready || ui.busy) return;
+  saveProject();
+  if (settings.clearOnRun) term.clear();
+  showPanel('console');
+  term.rule('pytest');
+  setBusy(true, 'Testing');
+  const t0 = performance.now();
+  try {
+    const code = await py.call('tests', { ...collectDirty(), args: '' });
+    if (py.ready) term.done(`${code === 0 ? 'Tests passed' : code === 5 ? 'No tests found (name files test_*.py)' : 'Tests failed'} in ${fmtTime(performance.now() - t0)}`, code !== 0);
+  } catch (err) {
+    if (py.worker) term.write(String(err.message || err) + '\n', 'stderr');
+  }
+  if (py.ready) setBusy(false);
+}
+
+async function runWithArgs() {
+  const value = prompt('Program arguments (available as sys.argv[1:]):', settings.args || '');
+  if (value === null) return;
+  settings.args = value;
+  saveSettings();
+  runFile('run');
+}
+
+async function importZip(bytes) {
+  try {
+    await py.call('writeFiles', { files: { '/tmp/upload.zip': { b64: bytesToB64(bytes) } }, removed: [] });
+    const paths = await py.call('importZip', { path: '/tmp/upload.zip' });
+    for (const p of paths) {
+      const data = await py.call('readFile', { path: p });
+      const text = TEXT_EXT.test(p) && data.length < 1024 * 1024 ? tryDecodeText(data) : null;
+      if (text !== null) addTextFile(p, text, { open: false, overwrite: true });
+      else addBinaryFile(p, data);
+      dirty.delete(p);
+    }
+    const firstPy = paths.find((p) => /(^|\/)main\.py$/.test(p)) || paths.find(isPy);
+    if (firstPy && docs.has(firstPy)) openFile(firstPy);
+    return paths.length;
+  } catch (err) {
+    toast('Could not extract zip: ' + firstLine(err.message), 5000);
+    return 0;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Command palette (commands, files, symbols, go to line)
+// ---------------------------------------------------------------------------
+const palette = { items: [], index: 0 };
+const MOD = /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘' : 'Ctrl';
+
+function commands() {
+  const cmds = [
+    ['Run file', `${MOD}+Enter`, () => runFile()],
+    ['Run with arguments…', '', runWithArgs],
+    ['Debug file', 'F5', () => runFile('debug')],
+    ['Profile file', '', () => runFile('profile')],
+    ['Run tests (pytest)', '', runTests],
+    ['Run cell (# %%)', `${MOD}+Shift+Enter`, runCell],
+    ['Run selection / line in console', 'Shift+Enter', runSelection],
+    ['Stop', 'Shift+F5', stop],
+    ['Restart Python', '', () => restart()],
+    ['Debug: Continue', 'F5', () => debugCommand('continue')],
+    ['Debug: Step over', 'F10', () => debugCommand('next')],
+    ['Debug: Step into', 'F11', () => debugCommand('step')],
+    ['Debug: Step out', 'Shift+F11', () => debugCommand('return')],
+    ['Toggle breakpoint', 'F9', () => toggleBreakpoint(cm.getCursor().line)],
+    ['Remove all breakpoints', '', clearAllBreakpoints],
+    ['Format document (Black)', 'Shift+Alt+F', formatDocument],
+    ['Go to definition', 'F12', () => gotoDefinition()],
+    ['Find references', 'Shift+F12', () => findReferences()],
+    ['Rename symbol', 'F2', () => renameSymbol()],
+    ['Trigger autocomplete', 'Ctrl+Space', editorComplete],
+    ['Find in files', `${MOD}+Shift+F`, openSearch],
+    ['Find / replace in file', `${MOD}+F`, () => { cm.focus(); cm.execCommand('find'); }],
+    ['Go to file…', `${MOD}+P`, () => openPalette('')],
+    ['Go to symbol…', `${MOD}+Shift+O`, () => openPalette('@')],
+    ['Go to line…', 'Ctrl+G', () => openPalette(':')],
+    ['Toggle line comment', `${MOD}+/`, () => cm.execCommand('toggleComment')],
+    ['Fold all', '', () => cm.execCommand('foldAll')],
+    ['Unfold all', '', () => cm.execCommand('unfoldAll')],
+    ['New file', '', newFile],
+    ['Rename current file…', '', () => { const t = document.querySelector('.tab.active'); if (t) startRename(t, project.active); }],
+    ['Delete current file', '', () => { if (confirm(`Delete ${project.active}?`)) deleteFile(project.active); }],
+    ['Download current file', '', () => $('#download-file-btn').click()],
+    ['Download project as .zip', '', () => $('#zip-btn').click()],
+    ['Upload files / import .zip…', '', () => $('#upload-input').click()],
+    ['Copy share link', '', share],
+    ['Clear console', 'Ctrl+L', () => term.clear()],
+    ['Save', `${MOD}+S`, saveCommand],
+    ['Toggle word wrap', '', () => { settings.wrap = !settings.wrap; $('#set-wrap').checked = settings.wrap; saveSettings(); applySettings(); }],
+    ['Toggle linting', '', () => { settings.lint = !settings.lint; $('#set-lint').checked = settings.lint; saveSettings(); scheduleLint(0); }],
+    ['Toggle format on save', '', () => { settings.formatOnSave = !settings.formatOnSave; $('#set-fmt').checked = settings.formatOnSave; saveSettings(); }],
+    ['Toggle line-length ruler', '', () => { settings.ruler = !settings.ruler; $('#set-ruler').checked = settings.ruler; saveSettings(); applyRuler(); }],
+    ['Theme: light', '', () => setTheme('light')],
+    ['Theme: dark', '', () => setTheme('dark')],
+    ['Theme: follow system', '', () => setTheme('auto')],
+    ['Font size: larger', `${MOD}+=`, () => bumpFont(1)],
+    ['Font size: smaller', `${MOD}+-`, () => bumpFont(-1)],
+    ['Keyboard shortcuts', '', () => $('#shortcuts-dialog').showModal()],
+  ];
+  for (const p of ['console', 'variables', 'debug', 'problems', 'outline', 'search', 'files', 'packages']) {
+    cmds.push([`Show ${p[0].toUpperCase() + p.slice(1)}`, '', () => showPanel(p)]);
+  }
+  for (const ex of EXAMPLES) cmds.push([`Open example: ${ex.title}`, '', () => openExample(ex)]);
+  return cmds.map(([title, key, run]) => ({ title, key, run }));
+}
+
+function setTheme(t) {
+  settings.theme = t;
+  $('#set-theme').value = t;
+  saveSettings();
+  applySettings();
+}
+
+function bumpFont(d) {
+  const sizes = [11, 12, 13, 14, 15, 16, 18, 20, 22];
+  const i = sizes.indexOf(settings.fontSize);
+  settings.fontSize = sizes[Math.max(0, Math.min(sizes.length - 1, (i < 0 ? 3 : i) + d))];
+  $('#set-font').value = String(settings.fontSize);
+  saveSettings();
+  applySettings();
+}
+
+function applyRuler() {
+  cm.setOption('rulers', settings.ruler ? [{ column: 79, className: 'cm-ruler' }] : []);
+}
+
+function fuzzy(query, text) {
+  if (!query) return 1;
+  const q = query.toLowerCase(), t = text.toLowerCase();
+  const idx = t.indexOf(q);
+  if (idx >= 0) return 1000 - idx - t.length / 100;
+  let ti = 0, score = 0;
+  for (const ch of q) {
+    const j = t.indexOf(ch, ti);
+    if (j < 0) return 0;
+    score += j === ti ? 3 : 1;
+    ti = j + 1;
+  }
+  return score;
+}
+
+function openPalette(prefix) {
+  closeMenus();
+  const box = $('#palette');
+  box.hidden = false;
+  const input = $('#palette-input');
+  input.value = prefix;
+  palette.index = 0;
+  renderPalette();
+  input.focus();
+}
+
+function closePalette() {
+  $('#palette').hidden = true;
+  cm.focus();
+}
+
+function renderPalette() {
+  const raw = $('#palette-input').value;
+  let items = [];
+  let hint = '';
+  if (raw.startsWith('>')) {
+    const q = raw.slice(1).trim();
+    items = commands().map((c) => ({ ...c, score: fuzzy(q, c.title) })).filter((c) => c.score > 0);
+    if (q) items.sort((a, b) => b.score - a.score);
+    hint = 'Commands';
+  } else if (raw.startsWith('@')) {
+    const q = raw.slice(1).trim();
+    items = computeOutline().map((o) => ({
+      title: `${o.kind === 'class' ? 'class ' : o.kind === 'cell' ? '§ ' : 'def '}${o.name}`, key: `line ${o.line + 1}`,
+      run: () => jumpTo(project.active, o.line + 1), score: fuzzy(q, o.name),
+    })).filter((c) => c.score > 0);
+    if (q) items.sort((a, b) => b.score - a.score);
+    hint = `Symbols in ${project.active}`;
+  } else if (raw.startsWith(':')) {
+    const n = parseInt(raw.slice(1), 10);
+    items = [{ title: Number.isFinite(n) ? `Go to line ${n}` : `Type a line number (1–${cm.lineCount()})`, key: '', run: () => { if (Number.isFinite(n)) jumpTo(project.active, Math.max(1, Math.min(n, cm.lineCount()))); } }];
+    hint = 'Go to line';
+  } else {
+    const q = raw.trim();
+    items = project.order.map((p) => ({ title: p, key: p === project.active ? 'current' : '', run: () => openFile(p), score: fuzzy(q, p) }))
+      .filter((c) => c.score > 0);
+    if (q) items.sort((a, b) => b.score - a.score);
+    hint = 'Files — type > for commands, @ for symbols, : for a line';
+  }
+  palette.items = items.slice(0, 80);
+  palette.index = Math.min(palette.index, Math.max(0, palette.items.length - 1));
+  $('#palette-hint').textContent = hint;
+  const list = $('#palette-list');
+  list.innerHTML = palette.items.map((it, i) => `<li class="${i === palette.index ? 'sel' : ''}" data-i="${i}"><span>${esc(it.title)}</span>${it.key ? `<kbd>${esc(it.key)}</kbd>` : ''}</li>`).join('')
+    || '<li class="muted">No matches</li>';
+  list.querySelectorAll('li[data-i]').forEach((li) => li.addEventListener('mousedown', (e) => { e.preventDefault(); runPaletteItem(+li.dataset.i); }));
+  list.querySelector('.sel')?.scrollIntoView({ block: 'nearest' });
+}
+
+function runPaletteItem(i) {
+  const it = palette.items[i];
+  closePalette();
+  if (it) setTimeout(() => it.run(), 0);
+}
+
+function openExample(ex) {
+  if (project.files[ex.name] && docs.get(ex.name).getValue() === ex.code) openFile(ex.name);
+  else addTextFile(ex.name, ex.code);
+  toast(`Opened ${ex.name} — press Run`);
+}
+
+// ---------------------------------------------------------------------------
+// Hooks called from the core app
+// ---------------------------------------------------------------------------
+function setupEditorFeatures(editor) {
+  editor.on('gutterClick', (ed, line, gutter) => {
+    if (gutter === 'cm-breakpoints' || gutter === 'CodeMirror-linenumbers' || gutter === 'cm-lint-gutter') toggleBreakpoint(line);
+  });
+  editor.on('changes', () => {
+    scheduleLint();
+    scheduleOutline();
+    hideTip();
+  });
+  editor.on('inputRead', (ed, change) => {
+    const t = change.text.join('');
+    if (t === '(' || t === ',') setTimeout(signatureHelp, 30);
+    else if (t === ')') hideSig();
+  });
+  editor.on('cursorActivity', () => {
+    const sig = $('#sigtip');
+    if (!sig.hidden && !/[(,]\s*[^()]*$/.test(editor.getLine(editor.getCursor().line).slice(0, editor.getCursor().ch))) hideSig();
+  });
+  editor.on('blur', () => setTimeout(hideSig, 150));
+  editor.on('keydown', (ed, e) => { if (e.key === 'Escape') { hideSig(); hideTip(); } });
+  editor.on('scroll', hideTip);
+  const wrap = editor.getWrapperElement();
+  let lastXY = [0, 0];
+  wrap.addEventListener('mousemove', (e) => {
+    if (Math.abs(e.clientX - lastXY[0]) + Math.abs(e.clientY - lastXY[1]) < 3) return;
+    lastXY = [e.clientX, e.clientY];
+    if (!$('#tooltip').hidden && !e.target.closest('#tooltip')) hideTip();
+    clearTimeout(tooltip.timer);
+    if (e.target.closest('.CodeMirror-gutters')) return;
+    tooltip.timer = setTimeout(() => hoverAt(e.clientX, e.clientY), 600);
+  });
+  wrap.addEventListener('mouseleave', () => { clearTimeout(tooltip.timer); setTimeout(() => { if (!$('#tooltip').matches(':hover')) hideTip(); }, 200); });
+  wrap.addEventListener('mousedown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.button === 0 && !e.target.closest('.CodeMirror-gutters')) {
+      const pos = editor.coordsChar({ left: e.clientX, top: e.clientY }, 'window');
+      e.preventDefault();
+      setTimeout(() => gotoDefinition(pos), 0);
+    }
+  });
+}
+
+function onActiveFileChanged() {
+  applyBreakpointMarkers();
+  if (problems.has(project.active)) setProblems(project.active, problems.get(project.active));
+  else cm.clearGutter('cm-lint-gutter');
+  scheduleLint(150);
+  if (!$('#panel-outline').hidden) renderOutline();
+}
+
+function onPanelShown(name) {
+  if (name === 'variables') refreshVariables();
+  if (name === 'debug') renderDebugPanel();
+  if (name === 'problems') renderProblems();
+  if (name === 'outline') renderOutline();
+  if (name === 'search') setTimeout(() => $('#search-input').focus(), 0);
+}
+
+function onIdle() {
+  if (debugState.active || debugState.state) endDebugSession();
+  updateDebugBar();
+  if (!$('#panel-variables').hidden) refreshVariables();
+  scheduleLint(300);
+}
+
+function initFeatures() {
+  restoreBreakpoints();
+  applyBreakpointMarkers();
+  updateProblemsStatus();
+
+  // Run menu & debug controls
+  $('#run-menu-btn').addEventListener('click', (e) => { e.stopPropagation(); toggleMenu(e.currentTarget, $('#run-menu')); });
+  $('#run-menu').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-run]');
+    if (!b) return;
+    closeMenus();
+    ({ run: () => runFile(), args: runWithArgs, debug: () => runFile('debug'), profile: () => runFile('profile'), tests: runTests, cell: runCell })[b.dataset.run]();
+  });
+  $('#debug-btn').addEventListener('click', () => runFile('debug'));
+  $('#debug-bar').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-cmd]');
+    if (b) debugCommand(b.dataset.cmd);
+  });
+  $('#debug-stop').addEventListener('click', () => stop());
+  $('#palette-btn').addEventListener('click', (e) => { e.stopPropagation(); openPalette('>'); });
+
+  // Palette
+  const pin = $('#palette-input');
+  pin.addEventListener('input', () => { palette.index = 0; renderPalette(); });
+  pin.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown') { e.preventDefault(); palette.index = Math.min(palette.index + 1, palette.items.length - 1); renderPalette(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); palette.index = Math.max(palette.index - 1, 0); renderPalette(); }
+    else if (e.key === 'Enter') { e.preventDefault(); runPaletteItem(palette.index); }
+    else if (e.key === 'Escape') { e.preventDefault(); closePalette(); }
+  });
+  $('#palette').addEventListener('mousedown', (e) => { if (e.target.id === 'palette') closePalette(); });
+
+  // Panels
+  $('#vars-filter').addEventListener('input', renderVariables);
+  $('#vars-refresh').addEventListener('click', refreshVariables);
+  let searchTimer = null;
+  for (const id of ['search-input', 'search-case', 'search-regex', 'search-word']) {
+    $('#' + id).addEventListener(id === 'search-input' ? 'input' : 'change', () => { clearTimeout(searchTimer); searchTimer = setTimeout(runSearch, 200); });
+  }
+  $('#search-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') runSearch(); });
+  $('#replace-all').addEventListener('click', () => {
+    if (!$('#search-input').value) return;
+    if (confirm(`Replace all matches of "${$('#search-input').value}" with "${$('#replace-input').value}" in every file?`)) replaceAll();
+  });
+  $('#st-problems').addEventListener('click', () => showPanel('problems'));
+
+  // Settings
+  const bind = (id, key, after) => {
+    const el = $('#' + id);
+    el.checked = !!settings[key];
+    el.addEventListener('change', () => { settings[key] = el.checked; saveSettings(); after?.(); });
+  };
+  bind('set-lint', 'lint', () => scheduleLint(0));
+  bind('set-fmt', 'formatOnSave');
+  bind('set-ruler', 'ruler', applyRuler);
+
+  // Console images: click to download
+  $('#output').addEventListener('click', (e) => {
+    const img = e.target.closest('img.rich');
+    if (!img) return;
+    const a = document.createElement('a');
+    a.href = img.src;
+    a.download = img.src.startsWith('data:image/svg') ? 'drawing.svg' : img.src.startsWith('data:image/jpeg') ? 'image.jpg' : 'plot.png';
+    a.click();
+  });
+
+  // Global keys that browsers would otherwise take (reload, print, …)
+  document.addEventListener('keydown', (e) => {
+    const mod = e.ctrlKey || e.metaKey;
+    const inEditor = !!e.target.closest?.('.CodeMirror');
+    if (e.key === 'F5') {
+      e.preventDefault();
+      if (inEditor) return;
+      if (e.shiftKey) stop();
+      else if (debugState.paused) debugCommand('continue');
+      else runFile('debug');
+    } else if (!inEditor && ['F10', 'F11'].includes(e.key) && debugState.paused) {
+      e.preventDefault();
+      debugCommand(e.key === 'F10' ? 'next' : e.shiftKey ? 'return' : 'step');
+    } else if (mod && e.shiftKey && (e.key === 'P' || e.key === 'p')) {
+      e.preventDefault();
+      if (!inEditor) openPalette('>');
+    } else if (mod && !e.shiftKey && (e.key === 'p' || e.key === 'P')) {
+      e.preventDefault();
+      if (!inEditor) openPalette('');
+    } else if (e.key === 'F1') {
+      e.preventDefault();
+      openPalette('>');
+    } else if (mod && e.shiftKey && (e.key === 'F' || e.key === 'f') && !inEditor) {
+      e.preventDefault();
+      openSearch();
+    } else if (mod && (e.key === '=' || e.key === '+')) {
+      e.preventDefault();
+      bumpFont(1);
+    } else if (mod && e.key === '-') {
+      e.preventDefault();
+      bumpFont(-1);
+    }
+  });
+}
+
+// Handle for scripting/automation from the browser devtools console.
+window.ideApi = {
+  toggleBreakpoint, clearAllBreakpoints, collectBreakpoints, debugCommand, lintActive, formatDocument,
+  gotoDefinition, findReferences, renameSymbol, openPalette, openSearch, runCell, runTests, runFile,
+  addTextFile, openFile, showPanel, project, docs,
+};
 main().catch((err) => {
   console.error(err);
   document.body.insertAdjacentHTML('beforeend', `<pre style="position:fixed;bottom:30px;left:16px;right:16px;color:#c62828;background:#fff;padding:12px;border-radius:8px;z-index:999;white-space:pre-wrap">Startup error: ${String(err && err.stack || err).replace(/</g, '&lt;')}</pre>`);
