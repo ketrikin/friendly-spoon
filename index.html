@@ -16,7 +16,375 @@
   <link rel="stylesheet" crossorigin="anonymous" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
   <link rel="stylesheet" crossorigin="anonymous" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.css">
   <link rel="stylesheet" crossorigin="anonymous" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/dialog/dialog.min.css">
-  <link rel="stylesheet" href="css/style.css">
+  <style>
+:root {
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --surface-2: #f0f2f5;
+  --border: #dde1e7;
+  --text: #1d2330;
+  --muted: #677185;
+  --accent: #2563eb;
+  --accent-text: #ffffff;
+  --danger: #c62828;
+  --ok: #1b8a4b;
+  --warn: #a15c00;
+  --sel: #d7e4ff;
+  --active-line: #f3f6fb;
+  --err-line: #fde8e8;
+  --console-bg: #ffffff;
+  --stderr: #c62828;
+  --stdin: #1b6fd1;
+  --sys: #7a8394;
+  --tok-keyword: #a626a4;
+  --tok-def: #2563eb;
+  --tok-builtin: #b45309;
+  --tok-string: #2f7d32;
+  --tok-number: #b45309;
+  --tok-comment: #8a93a3;
+  --tok-variable2: #0e7490;
+  --tok-operator: #475569;
+  --tok-meta: #9333ea;
+  --tok-property: #1d4ed8;
+  --shadow: 0 8px 28px rgba(15, 23, 42, .16);
+  --mono: ui-monospace, "SFMono-Regular", "JetBrains Mono", "Cascadia Code", Menlo, Consolas, "Liberation Mono", monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-size: 14px;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1218;
+    --surface: #161a22;
+    --surface-2: #1d222c;
+    --border: #2a303c;
+    --text: #e3e7ee;
+    --muted: #8b94a7;
+    --accent: #4f8cff;
+    --accent-text: #0b1020;
+    --danger: #ff6b6b;
+    --ok: #4ade80;
+    --warn: #fbbf24;
+    --sel: #2b3d63;
+    --active-line: #1b202a;
+    --err-line: #3a1d22;
+    --console-bg: #12161d;
+    --stderr: #ff7b7b;
+    --stdin: #7cb4ff;
+    --sys: #7d879a;
+    --tok-keyword: #d68cff;
+    --tok-def: #7aa8ff;
+    --tok-builtin: #f2b56b;
+    --tok-string: #9ad38a;
+    --tok-number: #f2b56b;
+    --tok-comment: #6b7487;
+    --tok-variable2: #5fd0e0;
+    --tok-operator: #a9b2c3;
+    --tok-meta: #c99bff;
+    --tok-property: #93b9ff;
+    --shadow: 0 10px 30px rgba(0, 0, 0, .5);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #0f1218;
+  --surface: #161a22;
+  --surface-2: #1d222c;
+  --border: #2a303c;
+  --text: #e3e7ee;
+  --muted: #8b94a7;
+  --accent: #4f8cff;
+  --accent-text: #0b1020;
+  --danger: #ff6b6b;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --sel: #2b3d63;
+  --active-line: #1b202a;
+  --err-line: #3a1d22;
+  --console-bg: #12161d;
+  --stderr: #ff7b7b;
+  --stdin: #7cb4ff;
+  --sys: #7d879a;
+  --tok-keyword: #d68cff;
+  --tok-def: #7aa8ff;
+  --tok-builtin: #f2b56b;
+  --tok-string: #9ad38a;
+  --tok-number: #f2b56b;
+  --tok-comment: #6b7487;
+  --tok-variable2: #5fd0e0;
+  --tok-operator: #a9b2c3;
+  --tok-meta: #c99bff;
+  --tok-property: #93b9ff;
+  --shadow: 0 10px 30px rgba(0, 0, 0, .5);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font: 14px/1.4 var(--sans);
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  overflow: hidden;
+}
+button, input, select, textarea { font: inherit; color: inherit; }
+code, kbd { font-family: var(--mono); font-size: .92em; }
+kbd { border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 4px; padding: 0 .35em; background: var(--surface-2); }
+[hidden] { display: none !important; }
+.grow { flex: 1; }
+.muted { color: var(--muted); font-weight: normal; }
+
+/* ---------- top bar ---------- */
+.topbar {
+  display: flex; align-items: center; gap: 12px;
+  padding: 8px 12px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  min-width: 0;
+}
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 650; white-space: nowrap; }
+.logo {
+  display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 7px;
+  background: var(--accent); color: var(--accent-text); font: 700 12px/1 var(--mono);
+}
+.actions { display: flex; align-items: center; gap: 6px; margin-left: auto; flex-wrap: wrap; justify-content: flex-end; }
+.sep { width: 1px; height: 22px; background: var(--border); margin: 0 4px; }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 32px; padding: 0 12px;
+  border: 1px solid var(--border); border-radius: 7px;
+  background: var(--surface-2); cursor: pointer; white-space: nowrap;
+  transition: background .12s, border-color .12s, opacity .12s;
+}
+.btn:hover:not(:disabled) { border-color: var(--muted); }
+.btn:disabled { opacity: .45; cursor: default; }
+.btn:focus-visible, .ptab:focus-visible, .tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.btn svg { width: 14px; height: 14px; fill: currentColor; }
+.btn svg[fill="none"] { fill: none; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 600; }
+.btn.primary:hover:not(:disabled) { filter: brightness(1.08); border-color: var(--accent); }
+.btn.small { height: 26px; padding: 0 9px; font-size: 12.5px; }
+.btn.ghost { background: transparent; border-color: transparent; color: var(--muted); }
+.btn.ghost:hover { color: var(--text); }
+.btn.danger { color: var(--danger); }
+.btn.icon-only { padding: 0 8px; }
+.btn.icon-only svg { width: 16px; height: 16px; }
+.btn.running { color: var(--danger); border-color: var(--danger); }
+.caret { font-size: 10px; color: var(--muted); }
+
+.menu-wrap { position: relative; }
+.menu {
+  position: absolute; right: 0; top: calc(100% + 6px); z-index: 50;
+  min-width: 240px; max-height: 70vh; overflow: auto;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+  box-shadow: var(--shadow); padding: 6px;
+}
+.menu button.item {
+  display: block; width: 100%; text-align: left; border: 0; background: none;
+  padding: 7px 10px; border-radius: 6px; cursor: pointer;
+}
+.menu button.item:hover, .menu button.item:focus-visible { background: var(--surface-2); outline: none; }
+.menu .item small { display: block; color: var(--muted); font-size: 12px; }
+.menu.settings { padding: 10px; width: 290px; }
+.menu .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 2px; }
+.menu .row.check { justify-content: flex-start; gap: 8px; cursor: pointer; }
+.menu select { background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px; padding: 3px 6px; }
+.menu-foot { display: flex; justify-content: space-between; border-top: 1px solid var(--border); margin-top: 6px; padding-top: 8px; }
+
+/* ---------- layout ---------- */
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 55fr) 6px minmax(0, 45fr);
+  min-height: 0; min-width: 0;
+}
+.pane { display: flex; flex-direction: column; min-width: 0; min-height: 0; background: var(--surface); }
+.splitter { background: var(--border); cursor: col-resize; position: relative; }
+.splitter:hover, .splitter.dragging, .splitter:focus-visible { background: var(--accent); outline: none; }
+
+/* ---------- editor ---------- */
+.tabbar { display: flex; align-items: stretch; background: var(--surface-2); border-bottom: 1px solid var(--border); min-height: 36px; }
+.tabs { display: flex; overflow-x: auto; scrollbar-width: thin; min-width: 0; }
+.tab {
+  display: flex; align-items: center; gap: 6px; padding: 0 6px 0 12px; height: 36px;
+  border: 0; border-right: 1px solid var(--border); background: transparent; cursor: pointer;
+  font: 13px var(--mono); color: var(--muted); white-space: nowrap; position: relative;
+}
+.tab.active { background: var(--surface); color: var(--text); }
+.tab.active::after { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 2px; background: var(--accent); }
+.tab .close {
+  display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 4px;
+  color: var(--muted); opacity: 0; font-size: 14px; line-height: 1;
+}
+.tab:hover .close, .tab.active .close { opacity: 1; }
+.tab .close:hover { background: var(--border); color: var(--text); }
+.tab .main-badge { font: 600 9.5px var(--sans); text-transform: uppercase; letter-spacing: .04em; color: var(--accent); }
+.tab input.rename { font: 13px var(--mono); width: 14ch; border: 1px solid var(--accent); border-radius: 4px; padding: 1px 4px; background: var(--surface); }
+.tab-add, .tab-tool {
+  border: 0; background: transparent; color: var(--muted); cursor: pointer; padding: 0 12px; font-size: 18px;
+}
+.tab-tool { margin-left: auto; display: grid; place-items: center; }
+.tab-tool svg { width: 16px; height: 16px; }
+.tab-add:hover, .tab-tool:hover { color: var(--text); }
+.editor { flex: 1; min-height: 0; position: relative; }
+.editor .CodeMirror { position: absolute; inset: 0; height: auto; }
+
+/* CodeMirror theme driven by CSS variables (works in light and dark) */
+.CodeMirror { background: var(--surface); color: var(--text); font-family: var(--mono); font-size: var(--font-size); line-height: 1.5; }
+.CodeMirror-gutters { background: var(--surface); border-right: 1px solid var(--border); }
+.CodeMirror-linenumber { color: var(--muted); opacity: .7; padding: 0 8px 0 6px; }
+.CodeMirror-cursor { border-left: 2px solid var(--accent); }
+.CodeMirror-selected, .CodeMirror-focused .CodeMirror-selected { background: var(--sel) !important; }
+.CodeMirror-line::selection, .CodeMirror-line > span::selection, .CodeMirror-line > span > span::selection { background: var(--sel); }
+.CodeMirror-activeline-background { background: var(--active-line); }
+.CodeMirror-matchingbracket { color: inherit !important; background: var(--sel); outline: 1px solid var(--accent); }
+.CodeMirror-nonmatchingbracket { color: var(--danger) !important; }
+.cm-keyword { color: var(--tok-keyword); }
+.cm-def { color: var(--tok-def); }
+.cm-builtin { color: var(--tok-builtin); }
+.cm-string, .cm-string-2 { color: var(--tok-string); }
+.cm-number { color: var(--tok-number); }
+.cm-comment { color: var(--tok-comment); font-style: italic; }
+.cm-variable-2 { color: var(--tok-variable2); }
+.cm-operator { color: var(--tok-operator); }
+.cm-meta { color: var(--tok-meta); }
+.cm-property { color: var(--tok-property); }
+.cm-atom { color: var(--tok-number); }
+.cm-error { color: var(--danger); }
+.cm-error-line { background: var(--err-line) !important; }
+.CodeMirror-dialog { background: var(--surface-2); color: var(--text); border-color: var(--border) !important; }
+.CodeMirror-dialog input { color: var(--text); }
+.CodeMirror-search-match { background: rgba(255, 196, 0, .35); }
+.CodeMirror-hints {
+  background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow);
+  font: 13px var(--mono); border-radius: 8px; padding: 4px; z-index: 60; max-height: 18em;
+}
+.CodeMirror-hint { color: var(--text); padding: 2px 8px; border-radius: 4px; }
+.CodeMirror-hint .ht { display: inline-block; min-width: 4.5em; color: var(--muted); font-size: 11px; margin-left: 12px; float: right; }
+li.CodeMirror-hint-active { background: var(--accent); color: var(--accent-text); }
+li.CodeMirror-hint-active .ht { color: inherit; }
+
+/* ---------- side pane ---------- */
+.ptabs { display: flex; align-items: center; gap: 2px; padding: 0 6px; height: 36px; background: var(--surface-2); border-bottom: 1px solid var(--border); }
+.ptab { border: 0; background: none; height: 36px; padding: 0 12px; cursor: pointer; color: var(--muted); position: relative; font-weight: 550; }
+.ptab.active { color: var(--text); }
+.ptab.active::after { content: ""; position: absolute; left: 10px; right: 10px; bottom: 0; height: 2px; background: var(--accent); border-radius: 2px; }
+.panel { flex: 1; min-height: 0; overflow: auto; }
+
+/* console */
+.console {
+  background: var(--console-bg); font: var(--font-size)/1.45 var(--mono);
+  padding: 8px 12px 24px; cursor: text; overscroll-behavior: contain;
+}
+.output { white-space: pre-wrap; overflow-wrap: anywhere; }
+.output .ln { min-height: 1.45em; }
+.output .stderr { color: var(--stderr); }
+.output .stdin { color: var(--stdin); }
+.output .sys { color: var(--sys); font-style: italic; }
+.output .echo { color: var(--text); }
+.output .echo .p { color: var(--muted); user-select: none; }
+.output .banner { color: var(--muted); }
+.output .rule { display: flex; align-items: center; gap: 8px; color: var(--sys); font: 12px var(--sans); margin: 8px 0 4px; }
+.output .rule::after { content: ""; flex: 1; border-top: 1px dashed var(--border); }
+.output .done { color: var(--sys); font: 12px var(--sans); margin: 4px 0 8px; }
+.output .done.fail { color: var(--stderr); }
+.output img.rich { display: block; max-width: 100%; height: auto; margin: 6px 0; background: #fff; border-radius: 4px; }
+.output iframe.rich { display: block; width: 100%; border: 1px solid var(--border); border-radius: 6px; margin: 6px 0; background: #fff; color-scheme: light; }
+.output .trimmed { color: var(--sys); font: italic 12px var(--sans); }
+.stdin-field {
+  font: inherit; color: var(--stdin); background: transparent; border: 0; outline: none;
+  border-bottom: 1px dashed var(--stdin); min-width: 12ch; width: 60%; padding: 0;
+}
+.prompt-row { display: flex; align-items: flex-start; gap: 0; }
+.ps { color: var(--accent); white-space: pre; user-select: none; padding-right: 1ch; font-weight: 600; }
+#repl {
+  flex: 1; border: 0; outline: none; resize: none; background: transparent; padding: 0;
+  font: inherit; line-height: inherit; color: var(--text); overflow: hidden; min-height: 1.45em;
+}
+.completions { color: var(--muted); }
+
+/* files */
+.files, .packages { padding: 10px 12px; }
+.panel-tools { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.hint { color: var(--muted); font-size: 12.5px; margin: 8px 0 10px; }
+.file-list, .pkg-list { list-style: none; margin: 0; padding: 0; }
+.file-list li, .pkg-list li {
+  display: flex; align-items: center; gap: 8px; padding: 5px 6px; border-radius: 6px; min-height: 32px;
+}
+.file-list li:hover, .pkg-list li:hover { background: var(--surface-2); }
+.file-list .name { font-family: var(--mono); font-size: 13px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-list .size, .pkg-list .ver { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.file-list .saved { color: var(--ok); font-size: 11px; }
+.file-list .acts { display: flex; gap: 2px; }
+.file-list .acts button, .pkg-list button {
+  border: 0; background: none; cursor: pointer; color: var(--muted); padding: 3px 6px; border-radius: 5px; font-size: 12px;
+}
+.file-list .acts button:hover, .pkg-list button:hover { color: var(--text); background: var(--border); }
+.file-list .empty { color: var(--muted); }
+.pip-form { display: flex; gap: 6px; }
+.pip-form input, .filter {
+  flex: 1; min-width: 0; height: 28px; padding: 0 9px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface-2);
+  font-family: var(--mono); font-size: 13px;
+}
+.filter { width: 100%; margin-bottom: 6px; }
+.packages h3 { font-size: 13px; margin: 16px 0 6px; }
+.pkg-list .name { font-family: var(--mono); font-size: 13px; flex: 1; }
+.pkg-list { max-height: 40vh; overflow: auto; }
+
+/* status bar */
+.statusbar {
+  display: flex; align-items: center; gap: 14px; padding: 0 12px; height: 26px;
+  background: var(--surface-2); border-top: 1px solid var(--border); color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden;
+}
+.st-state { display: inline-flex; align-items: center; gap: 6px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); display: inline-block; }
+.st-state.ready .dot { background: var(--ok); }
+.st-state.busy .dot { background: var(--warn); animation: pulse 1s infinite; }
+.st-state.input .dot { background: var(--stdin); animation: pulse 1.4s infinite; }
+.st-state.error .dot { background: var(--danger); }
+.st-iso.warn { color: var(--warn); }
+@keyframes pulse { 50% { opacity: .35; } }
+
+.toast {
+  position: fixed; left: 50%; bottom: 40px; transform: translateX(-50%); z-index: 100;
+  background: var(--text); color: var(--surface); padding: 9px 16px; border-radius: 8px; box-shadow: var(--shadow); font-size: 13px;
+  max-width: calc(100vw - 32px);
+}
+.dialog { border: 1px solid var(--border); border-radius: 12px; background: var(--surface); color: var(--text); box-shadow: var(--shadow); padding: 18px 22px; max-width: calc(100vw - 32px); }
+.dialog::backdrop { background: rgba(0, 0, 0, .35); }
+.dialog h2 { margin: 0 0 12px; font-size: 16px; }
+.dialog td { padding: 4px 16px 4px 0; vertical-align: top; }
+.dialog form { margin-top: 14px; text-align: right; }
+
+.drop-target::after {
+  content: "Drop files to add them to your project"; position: fixed; inset: 0; z-index: 200;
+  display: grid; place-items: center; font-size: 18px; font-weight: 600; color: var(--accent);
+  background: color-mix(in srgb, var(--bg) 80%, transparent); border: 3px dashed var(--accent);
+}
+
+/* ---------- narrow screens ---------- */
+@media (max-width: 400px) {
+  .brand { display: none; }
+  .actions { margin-left: 0; width: 100%; justify-content: space-between; }
+}
+@media (max-width: 820px) {
+  .layout { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) 6px minmax(0, 1fr); }
+  .splitter { cursor: row-resize; }
+  .brand-name { display: none; }
+  .btn span:not(.caret) { display: none; }
+  #examples-btn, #share-btn { padding: 0 9px; }
+  .topbar { padding: 6px 16px; gap: 8px; }
+  .actions { flex-wrap: nowrap; gap: 4px; }
+  .btn { padding: 0 10px; }
+  #st-version { display: none; }
+  .sep { display: none; }
+  #st-cursor { display: none; }
+}
+</style>
 </head>
 <body>
   <header class="topbar">
@@ -162,6 +530,3054 @@
   <script crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/search/search.min.js"></script>
   <script crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/search/jump-to-line.min.js"></script>
   <script crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/keymap/sublime.min.js"></script>
-  <script type="module" src="js/app.js"></script>
+  <script type="text/plain" id="worker-src">
+// Web Worker that hosts the Pyodide (CPython → WebAssembly) interpreter.
+// Running Python off the main thread keeps the UI responsive, and lets us
+// block for input() / time.sleep() using SharedArrayBuffer + Atomics.
+
+let pyodide = null;
+let ide = null; // the `ide` Python module (py/ide.py)
+let interrupt = null; // Uint8Array(1) shared with the page: 2 = SIGINT
+let stdinCtrl = null; // Int32Array [state, length]; state 0 wait,1 data,2 cancel,3 EOF
+let stdinData = null; // Uint8Array payload
+let sleepCell = null; // private Int32Array used only for Atomics.wait timeouts
+let initPromise = null;
+let pendingInput = null; // resolve() of a JSPI input() waiting for the page
+let pendingSleep = null; // cancel() of a JSPI time.sleep()
+const mounts = new Map(); // mount point -> NativeFS handle (File System Access API)
+
+const HOME = '/home/pyodide';
+const post = (msg, transfer) => self.postMessage(msg, transfer || []);
+const status = (text) => post({ type: 'status', text: String(text) });
+
+function makeWriter(stream) {
+  const decoder = new TextDecoder();
+  return {
+    isatty: true,
+    write(buf) {
+      const text = decoder.decode(buf, { stream: true });
+      if (text) post({ type: stream, text });
+      return buf.length;
+    },
+  };
+}
+
+// Block until the page sends a line of input. Returns a string, or a number:
+// 1 = interrupted (Ctrl+C), 2 = unsupported (no SharedArrayBuffer), 3 = EOF.
+function readLine(consumeInterrupt) {
+  if (!stdinCtrl) return 2;
+  Atomics.store(stdinCtrl, 0, 0);
+  post({ type: 'stdin-request' });
+  while (Atomics.load(stdinCtrl, 0) === 0) Atomics.wait(stdinCtrl, 0, 0, 1000);
+  const state = Atomics.load(stdinCtrl, 0);
+  if (state === 1) {
+    const len = stdinCtrl[1];
+    return new TextDecoder().decode(stdinData.slice(0, len));
+  }
+  if (state === 2) {
+    if (consumeInterrupt && interrupt) interrupt[0] = 0;
+    return 1;
+  }
+  return 3;
+}
+
+// Interruptible sleep: returns 1 if interrupted, 0 otherwise.
+function sleep(seconds) {
+  const end = performance.now() + seconds * 1000;
+  for (;;) {
+    const remaining = end - performance.now();
+    if (remaining <= 0) return 0;
+    if (interrupt && interrupt[0]) {
+      interrupt[0] = 0;
+      return 1;
+    }
+    const slice = Math.min(remaining, 50);
+    if (sleepCell) Atomics.wait(sleepCell, 0, 0, slice);
+    else {
+      const until = performance.now() + slice;
+      while (performance.now() < until) { /* busy wait (no SharedArrayBuffer) */ }
+    }
+  }
+}
+
+async function init({ indexURL, shared, files, pySources }) {
+  // Classic worker (module workers can't start from a local file:// page).
+  importScripts(indexURL + 'pyodide.js');
+  pyodide = await self.loadPyodide({
+    indexURL,
+    env: { HOME, MPLBACKEND: 'module://ide_mpl' },
+    stdout: (t) => post({ type: 'stdout', text: t + '\n' }),
+    stderr: (t) => post({ type: 'stderr', text: t + '\n' }),
+  });
+  pyodide.setStdout(makeWriter('stdout'));
+  pyodide.setStderr(makeWriter('stderr'));
+
+  if (shared) {
+    interrupt = new Uint8Array(shared.interrupt);
+    pyodide.setInterruptBuffer(interrupt);
+    stdinCtrl = new Int32Array(shared.stdin, 0, 2);
+    stdinData = new Uint8Array(shared.stdin, 8);
+    sleepCell = new Int32Array(new SharedArrayBuffer(4));
+  }
+  pyodide.setStdin({
+    stdin: () => {
+      const r = readLine(false);
+      return typeof r === 'string' ? r + '\n' : null;
+    },
+  });
+
+  pyodide.registerJsModule('_ide_js', {
+    display: (mime, data, meta) => post({ type: 'display', mime, data, meta: JSON.parse(meta) }),
+    read_line: () => readLine(true),
+    sleep,
+    has_shared: !!shared,
+    // JSPI fallbacks used when SharedArrayBuffer is unavailable.
+    read_line_async: () => new Promise((resolve) => {
+      pendingInput = resolve;
+      post({ type: 'stdin-request' });
+    }),
+    sleep_async: (seconds) => new Promise((resolve) => {
+      const timer = setTimeout(() => { pendingSleep = null; resolve(0); }, seconds * 1000);
+      pendingSleep = () => { clearTimeout(timer); pendingSleep = null; resolve(1); };
+    }),
+    status,
+    // Load packages that ship with Pyodide (numpy, pandas, ...) for imports in `src`.
+    load_imports: (src) =>
+      pyodide.loadPackagesFromImports(src, { messageCallback: status, errorCallback: status }),
+    error_location: (path, line) => post({ type: 'error-location', path, line }),
+  });
+
+  // Install the runtime modules.
+  pyodide.FS.mkdirTree('/ide');
+  for (const [name, src] of Object.entries(pySources)) pyodide.FS.writeFile('/ide/' + name, src);
+  pyodide.runPython("import sys; sys.path.insert(0, '/ide')");
+  ide = pyodide.pyimport('ide');
+  ide.setup();
+  if (files) syncFiles(files, []);
+
+  const python = pyodide.runPython('import sys; sys.version.split()[0]');
+  post({ type: 'ready', version: pyodide.version, python, isolated: !!shared });
+}
+
+function fullPath(path) {
+  return path.startsWith('/') ? path : `${HOME}/${path}`;
+}
+
+function syncFiles(files, removed) {
+  const FS = pyodide.FS;
+  for (const [path, file] of Object.entries(files)) {
+    const full = fullPath(path);
+    FS.mkdirTree(full.slice(0, full.lastIndexOf('/')) || '/');
+    if (file.b64 !== undefined) {
+      const bin = atob(file.b64);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      FS.writeFile(full, bytes);
+    } else {
+      FS.writeFile(full, file.text);
+    }
+  }
+  for (const path of removed || []) {
+    try { FS.unlink(fullPath(path)); } catch { /* already gone */ }
+  }
+}
+
+async function syncMounts() {
+  for (const m of mounts.values()) {
+    try { await m.syncfs(); } catch (e) { status(`Could not sync mounted folder: ${e.message}`); }
+  }
+}
+
+const handlers = {
+  async run({ files, removed, main, autoInstall }) {
+    if (interrupt) interrupt[0] = 0;
+    syncFiles(files, removed);
+    ide.auto_install = autoInstall;
+    const sources = Object.entries(files)
+      .filter(([p, f]) => p.endsWith('.py') && f.text !== undefined)
+      .map(([, f]) => f.text);
+    const mainSrc = pyodide.FS.readFile(fullPath(main), { encoding: 'utf8' });
+    if (!sources.includes(mainSrc)) sources.push(mainSrc);
+    await ide.ensure_installed(sources);
+    const result = await ide.run_file(main);
+    await syncMounts();
+    return result;
+  },
+  async repl({ line, cell, autoInstall }) {
+    if (interrupt) interrupt[0] = 0;
+    ide.auto_install = autoInstall;
+    const result = await (cell ? ide.repl_cell(line) : ide.repl_push(line));
+    await syncMounts();
+    return result;
+  },
+  replReset() { ide.repl_reset(); },
+  async complete({ source, line, column, mode, path }) {
+    if (!pyodide.loadedPackages.jedi) {
+      try { await pyodide.loadPackage('jedi', { messageCallback: () => {} }); } catch { /* offline */ }
+    }
+    return JSON.parse(ide.complete(source, line, column, mode, path));
+  },
+  async install({ names }) {
+    await ide.pip('install ' + names.join(' '));
+  },
+  listPackages() { return JSON.parse(ide.list_packages()); },
+  listFiles({ root }) { return JSON.parse(ide.list_files(root || HOME)); },
+  readFile({ path }) {
+    const data = pyodide.FS.readFile(fullPath(path));
+    return data;
+  },
+  writeFiles({ files, removed }) { syncFiles(files, removed); },
+  deleteFile({ path }) { pyodide.FS.unlink(fullPath(path)); },
+  zip() {
+    const target = ide.zip_dir();
+    return pyodide.FS.readFile(target);
+  },
+  async mount({ handle }) {
+    const point = `/mnt/${handle.name}`;
+    if (mounts.has(point)) return point;
+    pyodide.FS.mkdirTree(point);
+    const m = await pyodide.mountNativeFS(point, handle);
+    mounts.set(point, m);
+    return point;
+  },
+};
+
+self.onmessage = async (event) => {
+  const msg = event.data;
+  if (msg.type === 'stdinReply') {
+    const resolve = pendingInput;
+    pendingInput = null;
+    if (resolve) resolve(msg.state === 1 ? msg.text : msg.state === 2 ? 1 : 3);
+    return;
+  }
+  if (msg.type === 'softInterrupt') {
+    if (pendingInput) {
+      const resolve = pendingInput;
+      pendingInput = null;
+      resolve(1);
+    } else if (pendingSleep) {
+      pendingSleep();
+    } else if (ide) {
+      // Cancels a running top-level `await` (async code); busy loops need Force stop.
+      ide.soft_interrupt();
+    }
+    return;
+  }
+  if (msg.type === 'init') {
+    initPromise = init(msg).catch((err) => {
+      post({ type: 'fatal', error: String(err && err.stack ? err.stack : err) });
+      throw err;
+    });
+    return;
+  }
+  try {
+    await initPromise;
+    const handler = handlers[msg.type];
+    if (!handler) throw new Error('Unknown request ' + msg.type);
+    const result = await handler(msg);
+    const transfer = result instanceof Uint8Array ? [result.buffer] : [];
+    post({ type: 'reply', id: msg.id, result }, transfer);
+  } catch (err) {
+    post({ type: 'reply', id: msg.id, error: String(err && err.message ? err.message : err) });
+  }
+};
+</script>
+<script type="text/plain" id="py-ide">
+"""Runtime support for the in-browser Python IDE.
+
+This module is loaded into Pyodide inside the Web Worker. It provides:
+
+* running project files as ``__main__`` (like ``python file.py``) and keeping
+  the namespace around for the interactive console (like ``python -i``)
+* an interactive console with continuation lines and top-level ``await``
+* rich output: ``display()``, ``_repr_html_``/``_repr_png_``/``_repr_svg_``
+  objects (pandas, PIL, ...) and inline matplotlib figures
+* blocking ``input()`` / ``sys.stdin`` and an interruptible ``time.sleep``
+* on-demand installation of missing packages via micropip
+* code completion (jedi when available, rlcompleter otherwise)
+
+The public helpers (``display``, ``HTML``, ``SVG``, ``Image``) can be imported
+by user code with ``from ide import display, HTML, Image``.
+"""
+
+import ast
+import base64
+import builtins
+import codeop
+import importlib
+import importlib.metadata
+import importlib.util
+import inspect
+import io
+import json
+import linecache
+import os
+import re
+import sys
+import time
+import traceback
+import types
+
+import _ide_js
+
+HOME = "/home/pyodide"
+_TLA = ast.PyCF_ALLOW_TOP_LEVEL_AWAIT
+
+__all__ = ["display", "HTML", "SVG", "Image"]
+
+# --------------------------------------------------------------------------
+# Rich display
+# --------------------------------------------------------------------------
+
+
+def _flush():
+    try:
+        sys.stdout.flush()
+        sys.stderr.flush()
+    except Exception:
+        pass
+
+
+def _emit(mime, data, meta=None):
+    _flush()
+    _ide_js.display(mime, data, json.dumps(meta or {}))
+
+
+def _b64(data):
+    if isinstance(data, str):
+        return data  # IPython convention: already base64 encoded
+    return base64.b64encode(bytes(data)).decode("ascii")
+
+
+def _png_size(data):
+    if isinstance(data, (bytes, bytearray)) and data[:8] == b"\x89PNG\r\n\x1a\n":
+        return int.from_bytes(data[16:20], "big"), int.from_bytes(data[20:24], "big")
+    return None
+
+
+def show_figure(fig):
+    """Render a matplotlib figure inline as a (high-dpi) PNG."""
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png", dpi=fig.dpi * 2, bbox_inches="tight")
+    png = buf.getvalue()
+    size = _png_size(png)
+    meta = {"width": size[0] // 2} if size else {}
+    _emit("image/png", _b64(png), meta)
+    fig._ide_shown = True
+
+
+def _flush_figures():
+    """Show any matplotlib figures that were created but never shown."""
+    helpers = sys.modules.get("matplotlib._pylab_helpers")
+    if helpers is None:
+        return
+    try:
+        managers = helpers.Gcf.get_all_fig_managers()
+        for manager in managers:
+            if not getattr(manager.canvas.figure, "_ide_shown", False):
+                show_figure(manager.canvas.figure)
+        if managers:
+            helpers.Gcf.destroy_all()
+    except Exception:
+        traceback.print_exc()
+
+
+_RICH = (
+    ("_repr_html_", "text/html"),
+    ("_repr_svg_", "image/svg+xml"),
+    ("_repr_png_", "image/png"),
+    ("_repr_jpeg_", "image/jpeg"),
+)
+
+
+def _display_one(obj):
+    fig_mod = sys.modules.get("matplotlib.figure")
+    if fig_mod is not None and isinstance(obj, fig_mod.Figure):
+        show_figure(obj)
+        return
+    if not inspect.isclass(obj) and not isinstance(obj, types.ModuleType):
+        for attr, mime in _RICH:
+            try:
+                method = getattr(obj, attr, None)
+            except Exception:
+                method = None
+            if not callable(method):
+                continue
+            try:
+                data = method()
+            except Exception:
+                continue
+            meta = {}
+            if isinstance(data, tuple):
+                data, meta = data[0], (data[1] if len(data) > 1 else {}) or {}
+            if data is None:
+                continue
+            if mime in ("image/png", "image/jpeg"):
+                size = _png_size(data)
+                if size and "width" not in meta:
+                    meta = dict(meta, width=size[0])
+                data = _b64(data)
+            elif isinstance(data, bytes):
+                data = data.decode("utf-8", "replace")
+            try:
+                _emit(mime, str(data), dict(meta))
+            except TypeError:
+                _emit(mime, str(data))
+            return
+    print(repr(obj))
+
+
+def display(*objs):
+    """Display objects with their richest available representation."""
+    for obj in objs:
+        _display_one(obj)
+
+
+class HTML:
+    """Wrap a string of HTML so that ``display()`` renders it."""
+
+    def __init__(self, html):
+        self.data = str(html)
+
+    def _repr_html_(self):
+        return self.data
+
+    def __repr__(self):
+        return f"<HTML {len(self.data)} chars>"
+
+
+class SVG:
+    """Wrap SVG markup so that ``display()`` renders it."""
+
+    def __init__(self, svg):
+        self.data = str(svg)
+
+    def _repr_svg_(self):
+        return self.data
+
+    def __repr__(self):
+        return f"<SVG {len(self.data)} chars>"
+
+
+class Image:
+    """Display a PNG/JPEG image given as bytes or a file path."""
+
+    def __init__(self, data=None, filename=None, width=None):
+        if filename is None and isinstance(data, (str, os.PathLike)):
+            filename, data = data, None
+        if filename is not None:
+            with open(filename, "rb") as f:
+                data = f.read()
+        self.data = bytes(data)
+        self.width = width
+
+    def _repr_png_(self):
+        if self.data[:3] == b"\xff\xd8\xff":
+            return None
+        return (self.data, {"width": self.width} if self.width else {})
+
+    def _repr_jpeg_(self):
+        if self.data[:3] != b"\xff\xd8\xff":
+            return None
+        return (self.data, {"width": self.width} if self.width else {})
+
+    def __repr__(self):
+        return f"<Image {len(self.data)} bytes>"
+
+
+def _displayhook(value):
+    if value is None:
+        return
+    builtins._ = None
+    _display_one(value)
+    builtins._ = value
+
+
+# --------------------------------------------------------------------------
+# stdin / sleep
+# --------------------------------------------------------------------------
+
+_INTERRUPTED, _UNSUPPORTED, _EOF = 1, 2, 3
+
+
+def _input(prompt=""):
+    if prompt:
+        sys.stdout.write(str(prompt))
+    _flush()
+    result = _ide_js.read_line()
+    if result == _UNSUPPORTED and _can_suspend():
+        # No SharedArrayBuffer: suspend the WebAssembly stack (JSPI) instead.
+        from pyodide.ffi import run_sync
+
+        result = run_sync(_ide_js.read_line_async())
+    if isinstance(result, str):
+        return result
+    if result == _INTERRUPTED:
+        raise KeyboardInterrupt
+    if result == _UNSUPPORTED:
+        raise RuntimeError(
+            "input() is unavailable in this browser: it needs either "
+            "cross-origin isolation (SharedArrayBuffer) or WebAssembly JSPI. "
+            "Try a current version of Chrome, Edge or Firefox."
+        )
+    raise EOFError("EOF when reading a line")
+
+
+def _sleep(secs):
+    secs = float(secs)
+    if secs < 0:
+        raise ValueError("sleep length must be non-negative")
+    _flush()
+    if not _ide_js.has_shared and _can_suspend():
+        from pyodide.ffi import run_sync
+
+        if run_sync(_ide_js.sleep_async(secs)):
+            raise KeyboardInterrupt
+    elif _ide_js.sleep(secs):
+        raise KeyboardInterrupt
+
+
+def _can_suspend():
+    try:
+        from pyodide.ffi import can_run_sync
+
+        return can_run_sync()
+    except ImportError:
+        return False
+
+
+# --------------------------------------------------------------------------
+# Package installation
+# --------------------------------------------------------------------------
+
+auto_install = True
+_failed = set()
+# import name -> PyPI distribution name (only for names not in Pyodide's lockfile)
+_PYPI_ALIASES = {
+    "bs4": "beautifulsoup4",
+    "cv2": "opencv-python",
+    "dateutil": "python-dateutil",
+    "dotenv": "python-dotenv",
+    "jwt": "PyJWT",
+    "sklearn": "scikit-learn",
+    "skimage": "scikit-image",
+    "yaml": "pyyaml",
+    "PIL": "pillow",
+    "Crypto": "pycryptodome",
+    "attr": "attrs",
+    "google.protobuf": "protobuf",
+    "serial": "pyserial",
+    "magic": "python-magic",
+    "docx": "python-docx",
+    "pptx": "python-pptx",
+}
+_NEVER = {"tkinter", "turtle", "turtledemo", "curses", "readline", "idlelib", "msvcrt", "winreg", "_winapi"}
+
+
+def _status(msg):
+    _ide_js.status(str(msg))
+
+
+def _module_available(name):
+    if name in sys.modules:
+        return True
+    try:
+        return importlib.util.find_spec(name) is not None
+    except Exception:
+        return True  # something odd; let the real import report it
+
+
+def _missing_imports(sources):
+    from pyodide.code import find_imports
+
+    names = set()
+    for src in sources:
+        try:
+            names.update(n.split(".")[0] for n in find_imports(str(src)))
+        except Exception:
+            pass
+    if HOME not in sys.path:
+        sys.path.insert(0, HOME)
+    importlib.invalidate_caches()
+    return sorted(
+        n
+        for n in names
+        if n
+        and n not in _failed
+        and n not in _NEVER
+        and n not in sys.stdlib_module_names
+        and not _module_available(n)
+    )
+
+
+async def _micropip():
+    try:
+        import micropip
+    except ImportError:
+        import pyodide_js
+
+        await pyodide_js.loadPackage("micropip")
+        import micropip
+    return micropip
+
+
+async def ensure_installed(sources):
+    """Load/install any imported top-level modules that are missing.
+
+    Packages that ship with Pyodide (numpy, pandas, matplotlib, ...) are loaded
+    from its CDN; anything else is installed from PyPI with micropip.
+    """
+    if not auto_install:
+        return
+    sources = [str(s) for s in sources]
+    for src in sources:
+        await _ide_js.load_imports(src)
+    missing = _missing_imports(sources)
+    if not missing:
+        return
+    micropip = await _micropip()
+    for name in missing:
+        pkg = _PYPI_ALIASES.get(name, name)
+        _status(f"Installing {pkg} from PyPI…")
+        try:
+            await micropip.install(pkg)
+            importlib.invalidate_caches()
+            _status(f"Installed {pkg}")
+        except Exception as e:
+            _failed.add(name)
+            first = (str(e).strip().splitlines() or [type(e).__name__])[0]
+            _status(f"Could not install '{pkg}': {first[:200]}")
+
+
+async def pip(args):
+    """Very small ``pip`` command line: install / uninstall / list / show."""
+    argv = args.split()
+    if not argv:
+        print("usage: pip install|uninstall|list|show <package> ...")
+        return
+    cmd, rest = argv[0], [a for a in argv[1:] if not a.startswith("-")]
+    try:
+        await _pip(cmd, rest)
+    except Exception as e:
+        print(f"ERROR: {e}", file=sys.stderr)
+
+
+async def _pip(cmd, rest):
+    if cmd == "install":
+        if not rest:
+            print("pip install: no packages given")
+            return
+        micropip = await _micropip()
+        for pkg in rest:
+            _status(f"Installing {pkg}…")
+            try:
+                await micropip.install(pkg)
+                print(f"Successfully installed {pkg}")
+            except Exception as e:
+                print(f"ERROR: could not install {pkg}: {e}", file=sys.stderr)
+        importlib.invalidate_caches()
+        _failed.clear()
+    elif cmd == "uninstall":
+        micropip = await _micropip()
+        for pkg in rest:
+            try:
+                micropip.uninstall(pkg)
+                print(f"Successfully uninstalled {pkg}")
+            except Exception as e:
+                print(f"ERROR: {e}", file=sys.stderr)
+    elif cmd in ("list", "freeze"):
+        for name, version in json.loads(list_packages()):
+            print(f"{name}=={version}" if cmd == "freeze" else f"{name:<32} {version}")
+    elif cmd == "show":
+        for pkg in rest:
+            try:
+                meta = importlib.metadata.metadata(pkg)
+                for key in ("Name", "Version", "Summary", "Home-page", "Author", "License"):
+                    if meta.get(key):
+                        print(f"{key}: {meta[key]}")
+            except importlib.metadata.PackageNotFoundError:
+                print(f"WARNING: Package(s) not found: {pkg}", file=sys.stderr)
+    else:
+        print(f"pip: unsupported command '{cmd}' (try install, uninstall, list, show)")
+
+
+def list_packages():
+    seen = {}
+    for dist in importlib.metadata.distributions():
+        try:
+            name = dist.metadata["Name"]
+        except Exception:
+            continue
+        if name and name.lower() not in seen:
+            seen[name.lower()] = (name, dist.version)
+    return json.dumps(sorted(seen.values(), key=lambda p: p[0].lower()))
+
+
+# --------------------------------------------------------------------------
+# Running code
+# --------------------------------------------------------------------------
+
+_main = types.ModuleType("__main__")
+_main.__dict__["__builtins__"] = builtins
+_cell = 0
+
+
+def _ns():
+    return _main.__dict__
+
+
+def _purge_project_modules():
+    """Forget modules imported from the project so edits are picked up."""
+    prefix = HOME + "/"
+    for name, mod in list(sys.modules.items()):
+        f = getattr(mod, "__file__", None)
+        if isinstance(f, str) and f.startswith(prefix):
+            del sys.modules[name]
+    importlib.invalidate_caches()
+
+
+def _strip_internal(tb):
+    """Drop traceback entries that belong to this module (the IDE plumbing)."""
+    keep = []
+    while tb is not None:
+        if tb.tb_frame.f_code.co_filename != __file__:
+            keep.append(tb)
+        tb = tb.tb_next
+    for a, b in zip(keep, keep[1:] + [None]):
+        a.tb_next = b
+    return keep[0] if keep else None
+
+
+def _report_exception(e):
+    sys.last_exc, sys.last_type, sys.last_value = e, type(e), e
+    tb = _strip_internal(e.__traceback__)
+    sys.last_traceback = tb
+    _flush()
+    traceback.print_exception(type(e), e, tb)
+    # Tell the editor where things went wrong (innermost frame in a project file)
+    loc = None
+    if isinstance(e, SyntaxError) and e.filename and e.lineno:
+        loc = (e.filename, e.lineno)
+    for frame, lineno in traceback.walk_tb(tb):
+        fname = frame.f_code.co_filename
+        if fname.startswith(HOME + "/"):
+            loc = (fname, lineno)
+    if loc and str(loc[0]).startswith(HOME + "/"):
+        _ide_js.error_location(os.path.relpath(loc[0], HOME), int(loc[1]))
+
+
+def _handle_system_exit(e):
+    code = e.code
+    if code is None or code == 0:
+        return
+    if isinstance(code, int):
+        print(f"[process exited with code {code}]", file=sys.stderr)
+    else:
+        print(code, file=sys.stderr)
+
+
+_soft_task = None
+_soft_cancelled = False
+
+
+def soft_interrupt():
+    """Interrupt without SharedArrayBuffer: cancel the running top-level await."""
+    global _soft_cancelled
+    if _soft_task is not None and not _soft_task.done():
+        _soft_cancelled = True
+        _soft_task.cancel()
+        return True
+    return False
+
+
+async def _execute(code, ns):
+    global _soft_task, _soft_cancelled
+    result = eval(code, ns)
+    if inspect.iscoroutine(result):
+        import asyncio
+
+        _soft_cancelled = False
+        _soft_task = asyncio.ensure_future(result)
+        try:
+            result = await _soft_task
+        except asyncio.CancelledError:
+            if _soft_cancelled:
+                raise KeyboardInterrupt from None
+            raise
+        finally:
+            _soft_task = None
+    return result
+
+
+async def run_file(path):
+    """Run a project file as ``__main__``; its namespace becomes the console's."""
+    global _main
+    _purge_project_modules()
+    os.chdir(HOME)
+    full = os.path.join(HOME, path)
+    if os.path.dirname(full) not in sys.path:
+        sys.path.insert(0, os.path.dirname(full))
+    if HOME not in sys.path:
+        sys.path.insert(0, HOME)
+    with open(full, encoding="utf-8") as f:
+        src = f.read()
+    _main = types.ModuleType("__main__")
+    _main.__dict__.update(__file__=full, __builtins__=builtins)
+    sys.modules["__main__"] = _main
+    sys.argv = [full]
+    linecache.checkcache(full)
+    status = "ok"
+    try:
+        code = compile(src, full, "exec", flags=_TLA, dont_inherit=True)
+        await _execute(code, _ns())
+    except SystemExit as e:
+        _handle_system_exit(e)
+        if e.code not in (None, 0):
+            status = "error"
+    except KeyboardInterrupt as e:
+        _report_exception(e)
+        status = "interrupted"
+    except BaseException as e:
+        _report_exception(e)
+        status = "error"
+    finally:
+        _flush_figures()
+        _flush()
+    return status
+
+
+_compiler = codeop.CommandCompiler()
+_compiler.compiler.flags |= _TLA
+_buffer = []
+_PIP = re.compile(r"^\s*[%!]?\s*pip3?\s+(.*)$")
+
+
+def _cell_name(src):
+    global _cell
+    _cell += 1
+    name = f"<input-{_cell}>"
+    linecache.cache[name] = (len(src), None, src.splitlines(True), name)
+    return name
+
+
+async def _run_code(code):
+    try:
+        await _execute(code, _ns())
+    except SystemExit as e:
+        if e.code not in (None, 0):
+            _handle_system_exit(e)
+        print("(exit() has no effect in the browser console; use Restart to reset Python)")
+    except BaseException as e:
+        _report_exception(e)
+    finally:
+        _flush_figures()
+        _flush()
+
+
+async def repl_push(line):
+    """Push one console line. Returns 'incomplete', 'complete' or 'error'."""
+    line = str(line)
+    if not _buffer:
+        m = _PIP.match(line)
+        if m:
+            await pip(m.group(1))
+            return "complete"
+    if not _buffer and not line.strip():
+        return "complete"
+    _buffer.append(line)
+    source = "\n".join(_buffer)
+    try:
+        code = _compiler(source, "<console>", "single")
+    except (SyntaxError, OverflowError, ValueError) as e:
+        _buffer.clear()
+        _flush()
+        sys.stderr.write("".join(traceback.format_exception_only(type(e), e)))
+        return "error"
+    if code is None:
+        return "incomplete"
+    _buffer.clear()
+    name = _cell_name(source)
+    code = compile(source, name, "single", flags=_TLA, dont_inherit=True)
+    await ensure_installed([source])
+    await _run_code(code)
+    return "complete"
+
+
+async def repl_cell(source):
+    """Run a multi-line block (like a notebook cell); show the last expression."""
+    source = str(source)
+    _buffer.clear()
+    if not source.strip():
+        return "complete"
+    if "\n" not in source.strip():
+        m = _PIP.match(source)
+        if m:
+            await pip(m.group(1))
+            return "complete"
+    name = _cell_name(source)
+    try:
+        tree = ast.parse(source, name, "exec")
+        last = None
+        if tree.body and isinstance(tree.body[-1], ast.Expr):
+            last = ast.Expression(tree.body.pop().value)
+        body = compile(tree, name, "exec", flags=_TLA, dont_inherit=True)
+        tail = compile(last, name, "eval", flags=_TLA, dont_inherit=True) if last else None
+    except (SyntaxError, OverflowError, ValueError) as e:
+        _flush()
+        sys.stderr.write("".join(traceback.format_exception_only(type(e), e)))
+        return "error"
+    await ensure_installed([source])
+    try:
+        await _execute(body, _ns())
+        if tail is not None:
+            _displayhook(await _execute(tail, _ns()))
+    except SystemExit as e:
+        _handle_system_exit(e)
+    except BaseException as e:
+        _report_exception(e)
+    finally:
+        _flush_figures()
+        _flush()
+    return "complete"
+
+
+def repl_reset():
+    _buffer.clear()
+
+
+# --------------------------------------------------------------------------
+# Completion
+# --------------------------------------------------------------------------
+
+
+def _rl_complete(text):
+    import rlcompleter
+
+    word = re.search(r"[\w.]*$", text).group(0)
+    completer = rlcompleter.Completer(_ns())
+    out, i = [], 0
+    while i < 500:
+        r = completer.complete(word, i) if word else None
+        if r is None:
+            break
+        out.append(r)
+        i += 1
+    prefix = word.rsplit(".", 1)[-1] if word else ""
+    names = []
+    for r in out:
+        tail = r.rsplit(".", 1)[-1] if "." in word else r
+        names.append([tail, "function" if tail.endswith("(") else ""])
+    return {"items": names, "prefix": len(prefix)}
+
+
+def complete(source, line, column, mode, path):
+    """Return completions as JSON: {"items": [[text, type], ...], "prefix": n}."""
+    source = str(source)
+    try:
+        import jedi
+    except ImportError:
+        jedi = None
+    if jedi is not None:
+        try:
+            if mode == "console":
+                script = jedi.Interpreter(source, [_ns()])
+            else:
+                script = jedi.Script(source, path=os.path.join(HOME, str(path)))
+            comps = script.complete(int(line), int(column))
+            items, prefix = [], 0
+            for c in comps[:300]:
+                if c.name.startswith("__") and not c.complete.startswith("_") and len(comps) > 50:
+                    continue
+                items.append([c.name, c.type])
+            if comps:
+                prefix = len(comps[0].name) - len(comps[0].complete)
+            return json.dumps({"items": items, "prefix": prefix})
+        except Exception:
+            pass
+    lines = source.split("\n")
+    text = "\n".join(lines[: int(line) - 1] + [lines[int(line) - 1][: int(column)]])
+    return json.dumps(_rl_complete(text))
+
+
+# --------------------------------------------------------------------------
+# Files
+# --------------------------------------------------------------------------
+
+
+def list_files(root=HOME):
+    out = []
+    for base, dirs, files in os.walk(root):
+        dirs[:] = sorted(d for d in dirs if not d.startswith(".") and d != "__pycache__")
+        for name in sorted(files):
+            full = os.path.join(base, name)
+            try:
+                size = os.path.getsize(full)
+            except OSError:
+                size = -1
+            out.append([os.path.relpath(full, root), size])
+    return json.dumps(out)
+
+
+def zip_dir(root=HOME, target="/tmp/project.zip"):
+    import zipfile
+
+    with zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED) as zf:
+        for rel, _ in json.loads(list_files(root)):
+            zf.write(os.path.join(root, rel), rel)
+    return target
+
+
+# --------------------------------------------------------------------------
+# Setup
+# --------------------------------------------------------------------------
+
+
+def setup():
+    os.makedirs(HOME, exist_ok=True)
+    os.chdir(HOME)
+    if HOME not in sys.path:
+        sys.path.insert(0, HOME)
+    builtins.input = _input
+    builtins.display = display
+    time.sleep = _sleep
+    sys.displayhook = _displayhook
+    sys.modules["__main__"] = _main
+    os.environ.setdefault("MPLBACKEND", "module://ide_mpl")
+    os.environ.setdefault("TERM", "xterm-256color")
+    os.environ.setdefault("COLUMNS", "100")
+    return f"Python {sys.version.split()[0]}"
+</script>
+<script type="text/plain" id="py-ide-mpl">
+"""Matplotlib backend that renders figures inline in the browser console.
+
+Selected via ``MPLBACKEND=module://ide_mpl``. ``plt.show()`` and
+``fig.show()`` emit PNG images; figures left open at the end of a run are
+shown automatically (like a notebook).
+"""
+
+from matplotlib._pylab_helpers import Gcf
+from matplotlib.backend_bases import FigureManagerBase, _Backend
+from matplotlib.backends.backend_agg import FigureCanvasAgg, _BackendAgg
+
+
+class FigureManagerIDE(FigureManagerBase):
+    def show(self):
+        import ide
+
+        ide.show_figure(self.canvas.figure)
+
+
+class FigureCanvasIDE(FigureCanvasAgg):
+    manager_class = FigureManagerIDE
+
+
+@_Backend.export
+class _BackendIDE(_BackendAgg):
+    FigureCanvas = FigureCanvasIDE
+    FigureManager = FigureManagerIDE
+
+    @classmethod
+    def show(cls, *args, block=None, **kwargs):
+        import ide
+
+        managers = Gcf.get_all_fig_managers()
+        for manager in managers:
+            ide.show_figure(manager.canvas.figure)
+        Gcf.destroy_all()
+</script>
+<script type="module">
+// Console output renderer: a small terminal emulator that understands ANSI
+// SGR colours, carriage returns (progress bars), and rich outputs (images,
+// sandboxed HTML). Writes are batched per animation frame for speed.
+
+const ANSI_16 = [
+  '#000000', '#cd3131', '#0dbc79', '#c4a000', '#2472c8', '#bc3fbc', '#11a8cd', '#a0a0a0',
+  '#666666', '#f14c4c', '#23d18b', '#e5c400', '#3b8eea', '#d670d6', '#29b8db', '#e5e5e5',
+];
+
+function ansi256(n) {
+  if (n < 16) return ANSI_16[n];
+  if (n >= 232) {
+    const v = 8 + (n - 232) * 10;
+    return `rgb(${v},${v},${v})`;
+  }
+  n -= 16;
+  const c = (x) => (x === 0 ? 0 : 55 + x * 40);
+  return `rgb(${c(Math.floor(n / 36))},${c(Math.floor(n / 6) % 6)},${c(n % 6)})`;
+}
+
+const MAX_LINES = 5000;
+const SEQ = /\x1b\[([0-9;?]*)([A-Za-z])|\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)|\x1b[()][A-Za-z0-9]|\r\n|\n|\r|\x08|\t/g;
+
+class Terminal {
+  constructor(output, scroller) {
+    this.output = output;
+    this.scroller = scroller;
+    this.queue = [];
+    this.scheduled = false;
+    this.line = null; // current line element
+    this.crPending = false;
+    this.style = {}; // current SGR state
+    this.partial = ''; // incomplete escape sequence carried between writes
+    this.lineCount = 0;
+    this.trimmedNotice = null;
+  }
+
+  // ---- public API -------------------------------------------------------
+  write(text, cls = 'stdout') { this.push({ kind: 'text', text, cls }); }
+  system(text) { this.push({ kind: 'block', cls: 'sys', text }); }
+  rule(text) { this.push({ kind: 'block', cls: 'rule', text }); }
+  done(text, fail) { this.push({ kind: 'block', cls: fail ? 'done fail' : 'done', text }); }
+  echo(prompt, text) { this.push({ kind: 'echo', prompt, text }); }
+  rich(mime, data, meta) { this.push({ kind: 'rich', mime, data, meta: meta || {} }); }
+  clear() {
+    this.queue = [];
+    this.output.textContent = '';
+    this.line = null;
+    this.lineCount = 0;
+    this.crPending = false;
+    this.style = {};
+    this.partial = '';
+    this.trimmedNotice = null;
+  }
+
+  // Ensure everything queued has been rendered (e.g. before inserting a field).
+  flush() {
+    if (this.queue.length) this.render();
+  }
+
+  // Return the current (last) line, creating it if needed; used to place
+  // the inline input() field right after the prompt text.
+  currentLine() {
+    this.flush();
+    if (!this.line) this.newLine();
+    return this.line;
+  }
+
+  // Called after an inline input is answered: the echoed text ends the line.
+  endInputLine(text) {
+    this.flush();
+    if (!this.line) this.newLine();
+    const span = document.createElement('span');
+    span.className = 'stdin';
+    span.textContent = text;
+    this.line.appendChild(span);
+    this.line = null;
+    this.crPending = false;
+    this.scrollToEnd(true);
+  }
+
+  isNearBottom() {
+    const s = this.scroller;
+    return s.scrollHeight - s.scrollTop - s.clientHeight < 60;
+  }
+
+  scrollToEnd(force) {
+    if (force || this.stick) this.scroller.scrollTop = this.scroller.scrollHeight;
+  }
+
+  // ---- internals --------------------------------------------------------
+  push(item) {
+    this.queue.push(item);
+    if (!this.scheduled) {
+      this.scheduled = true;
+      requestAnimationFrame(() => this.render());
+    }
+  }
+
+  render() {
+    this.scheduled = false;
+    if (!this.queue.length) return;
+    this.stick = this.isNearBottom();
+    const items = this.queue;
+    this.queue = [];
+    for (const item of items) {
+      if (item.kind === 'text') this.renderText(item.text, item.cls);
+      else if (item.kind === 'block') this.renderBlock(item);
+      else if (item.kind === 'echo') this.renderEcho(item);
+      else if (item.kind === 'rich') this.renderRich(item);
+    }
+    this.trim();
+    this.scrollToEnd();
+  }
+
+  newLine() {
+    const div = document.createElement('div');
+    div.className = 'ln';
+    this.output.appendChild(div);
+    this.line = div;
+    this.lineCount++;
+    return div;
+  }
+
+  breakLine() {
+    this.line = null;
+    this.crPending = false;
+  }
+
+  appendSpan(text, cls) {
+    if (!text) return;
+    if (!this.line) this.newLine();
+    if (this.crPending) {
+      // Carriage return: overwrite the current line (good enough for progress bars).
+      this.line.textContent = '';
+      this.crPending = false;
+    }
+    const st = this.style;
+    const styled = st.fg || st.bg || st.bold || st.dim || st.italic || st.underline || st.inverse || st.strike;
+    const last = this.line.lastChild;
+    if (!styled && last && last.nodeType === 1 && last.dataset.plain === cls) {
+      last.textContent += text;
+      return;
+    }
+    const span = document.createElement('span');
+    span.className = cls;
+    span.textContent = text;
+    if (styled) {
+      let fg = st.fg, bg = st.bg;
+      if (st.inverse) [fg, bg] = [bg || 'var(--console-bg)', fg || 'var(--text)'];
+      if (fg) span.style.color = fg;
+      if (bg) span.style.background = bg;
+      if (st.bold) span.style.fontWeight = '700';
+      if (st.dim) span.style.opacity = '.65';
+      if (st.italic) span.style.fontStyle = 'italic';
+      if (st.underline || st.strike) span.style.textDecoration = [st.underline && 'underline', st.strike && 'line-through'].filter(Boolean).join(' ');
+    } else {
+      span.dataset.plain = cls;
+    }
+    this.line.appendChild(span);
+  }
+
+  sgr(params) {
+    const p = params === '' ? [0] : params.split(';').map((x) => parseInt(x || '0', 10));
+    let st = this.style;
+    for (let i = 0; i < p.length; i++) {
+      const n = p[i];
+      if (n === 0) st = this.style = {};
+      else if (n === 1) st.bold = true;
+      else if (n === 2) st.dim = true;
+      else if (n === 3) st.italic = true;
+      else if (n === 4) st.underline = true;
+      else if (n === 7) st.inverse = true;
+      else if (n === 9) st.strike = true;
+      else if (n === 22) st.bold = st.dim = false;
+      else if (n === 23) st.italic = false;
+      else if (n === 24) st.underline = false;
+      else if (n === 27) st.inverse = false;
+      else if (n === 29) st.strike = false;
+      else if (n >= 30 && n <= 37) st.fg = ANSI_16[n - 30];
+      else if (n >= 90 && n <= 97) st.fg = ANSI_16[n - 90 + 8];
+      else if (n >= 40 && n <= 47) st.bg = ANSI_16[n - 40];
+      else if (n >= 100 && n <= 107) st.bg = ANSI_16[n - 100 + 8];
+      else if (n === 39) st.fg = null;
+      else if (n === 49) st.bg = null;
+      else if (n === 38 || n === 48) {
+        let color = null;
+        if (p[i + 1] === 5) { color = ansi256(p[i + 2] || 0); i += 2; }
+        else if (p[i + 1] === 2) { color = `rgb(${p[i + 2] || 0},${p[i + 3] || 0},${p[i + 4] || 0})`; i += 4; }
+        if (n === 38) st.fg = color; else st.bg = color;
+      }
+    }
+  }
+
+  renderText(text, cls) {
+    // Start tracebacks on a fresh line (e.g. after a progress bar or input prompt).
+    if (cls === 'stderr' && text.startsWith('Traceback') && this.line && this.line.textContent) this.breakLine();
+    text = this.partial + text;
+    this.partial = '';
+    const tail = text.match(/\x1b(\[[0-9;?]*|\][^\x07]*|[()])?$/);
+    if (tail) {
+      this.partial = tail[0];
+      text = text.slice(0, tail.index);
+    }
+    SEQ.lastIndex = 0;
+    let last = 0, m;
+    while ((m = SEQ.exec(text))) {
+      if (m.index > last) this.appendSpan(text.slice(last, m.index), cls);
+      last = SEQ.lastIndex;
+      const tok = m[0];
+      if (tok === '\n' || tok === '\r\n') {
+        if (!this.line) this.newLine();
+        else if (this.crPending) this.crPending = false;
+        this.line = null;
+      } else if (tok === '\r') {
+        this.crPending = true;
+      } else if (tok === '\t') {
+        this.appendSpan('    '.slice(0, 4 - ((this.line?.textContent.length || 0) % 4)), cls);
+      } else if (tok === '\x08') {
+        if (this.line && this.line.lastChild) {
+          const t = this.line.lastChild;
+          t.textContent = t.textContent.slice(0, -1);
+        }
+      } else if (m[2] === 'm') {
+        this.sgr(m[1]);
+      } else if (m[2] === 'K') {
+        // Erase in line: if a CR is pending this clears the line.
+        if (this.crPending && this.line) { this.line.textContent = ''; this.crPending = false; }
+      } else if (m[2] === 'J' && (m[1] === '2' || m[1] === '3')) {
+        this.clear();
+      }
+      // Other control sequences (cursor movement etc.) are ignored.
+    }
+    if (last < text.length) this.appendSpan(text.slice(last), cls);
+  }
+
+  renderBlock(item) {
+    this.breakLine();
+    const div = document.createElement('div');
+    div.className = item.cls;
+    div.textContent = item.text;
+    this.output.appendChild(div);
+    this.lineCount++;
+  }
+
+  renderEcho({ prompt, text }) {
+    this.breakLine();
+    const lines = text.split('\n');
+    lines.forEach((l, i) => {
+      const div = document.createElement('div');
+      div.className = 'ln echo';
+      const p = document.createElement('span');
+      p.className = 'p';
+      p.textContent = (i === 0 ? prompt : '...') + ' ';
+      div.append(p, document.createTextNode(l));
+      this.output.appendChild(div);
+      this.lineCount++;
+    });
+  }
+
+  renderRich({ mime, data, meta }) {
+    this.breakLine();
+    let el;
+    if (mime === 'image/png' || mime === 'image/jpeg') {
+      el = document.createElement('img');
+      el.src = `data:${mime};base64,${data}`;
+      if (meta.width) el.style.width = `min(${meta.width}px, 100%)`;
+      el.alt = 'Image output';
+    } else if (mime === 'image/svg+xml') {
+      el = document.createElement('img');
+      el.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(data);
+      el.alt = 'SVG output';
+      el.style.background = 'transparent';
+    } else if (mime === 'text/html') {
+      // Sandboxed (no scripts) but same-origin so we can size it to its content.
+      el = document.createElement('iframe');
+      el.setAttribute('sandbox', 'allow-same-origin');
+      el.srcdoc = `<!doctype html><html><head><meta charset="utf-8"><style>
+        body{margin:8px;font:13px/1.4 system-ui,sans-serif;color:#1d2330;background:#fff}
+        table{border-collapse:collapse;font-size:12.5px}
+        th,td{border:1px solid #dde1e7;padding:3px 8px;text-align:right}
+        thead th{background:#f0f2f5} tbody tr:nth-child(even){background:#f8f9fb}
+        img,svg{max-width:100%}
+      <\/style><\/head><body>${data}<\/body><\/html>`;
+      el.style.height = '40px';
+      const fit = () => {
+        try {
+          const doc = el.contentDocument;
+          if (doc && doc.documentElement) el.style.height = Math.min(doc.documentElement.scrollHeight + 2, 600) + 'px';
+        } catch { /* ignore */ }
+      };
+      el.addEventListener('load', () => { fit(); setTimeout(fit, 150); this.scrollToEnd(this.stick); });
+    } else {
+      el = document.createElement('div');
+      el.textContent = String(data);
+    }
+    el.classList.add('rich');
+    this.output.appendChild(el);
+    this.lineCount += 10;
+  }
+
+  trim() {
+    if (this.lineCount <= MAX_LINES) return;
+    let excess = this.lineCount - MAX_LINES + 500;
+    let node = this.output.firstChild;
+    if (node === this.trimmedNotice) node = node.nextSibling;
+    while (node && excess > 0 && node !== this.line) {
+      const next = node.nextSibling;
+      excess -= node.classList && node.classList.contains('rich') ? 10 : 1;
+      this.lineCount -= node.classList && node.classList.contains('rich') ? 10 : 1;
+      node.remove();
+      node = next;
+    }
+    if (!this.trimmedNotice) {
+      this.trimmedNotice = document.createElement('div');
+      this.trimmedNotice.className = 'trimmed';
+      this.trimmedNotice.textContent = '… earlier output trimmed …';
+    }
+    this.output.prepend(this.trimmedNotice);
+  }
+}
+
+// Example programs offered in the Examples menu.
+const EXAMPLES = [
+  {
+    name: 'hello.py',
+    title: 'Hello, input()',
+    desc: 'Interactive input and f-strings',
+    code: `# input() pauses the program and waits for you to type in the console.
+name = input("What's your name? ")
+age = int(input("How old are you? "))
+print(f"Hello, {name}! In 10 years you'll be {age + 10}.")
+`,
+  },
+  {
+    name: 'plot.py',
+    title: 'Matplotlib chart',
+    desc: 'numpy + matplotlib, shown inline',
+    code: `import numpy as np
+import matplotlib.pyplot as plt
+
+x = np.linspace(0, 4 * np.pi, 400)
+fig, ax = plt.subplots(figsize=(7, 3.5))
+ax.plot(x, np.sin(x), label="sin(x)")
+ax.plot(x, np.cos(x) * np.exp(-x / 8), label="damped cos(x)")
+ax.set_title("Plots render right in the console")
+ax.legend()
+ax.grid(alpha=.3)
+plt.show()
+`,
+  },
+  {
+    name: 'dataframe.py',
+    title: 'pandas DataFrame',
+    desc: 'Tables render as HTML',
+    code: `import pandas as pd
+import numpy as np
+
+rng = np.random.default_rng(0)
+df = pd.DataFrame({
+    "city": ["Lisbon", "Oslo", "Kyoto", "Lima", "Accra"],
+    "temp_c": rng.normal(18, 6, 5).round(1),
+    "rain_mm": rng.integers(0, 120, 5),
+})
+display(df.sort_values("temp_c", ascending=False))
+print(df.describe())
+`,
+  },
+  {
+    name: 'game.py',
+    title: 'Guess the number',
+    desc: 'A loop with input() and random',
+    code: `import random
+
+secret = random.randint(1, 100)
+print("I'm thinking of a number between 1 and 100.")
+for tries in range(1, 8):
+    guess = int(input(f"Guess #{tries}: "))
+    if guess == secret:
+        print(f"Correct! You got it in {tries} tries.")
+        break
+    print("Too low." if guess < secret else "Too high.")
+else:
+    print(f"Out of guesses. It was {secret}.")
+`,
+  },
+  {
+    name: 'progress.py',
+    title: 'Progress & Ctrl+C',
+    desc: 'time.sleep, \\r progress, interrupt',
+    code: `import time
+
+# Press Stop (or Ctrl+C in the console) to interrupt.
+for i in range(101):
+    bar = "#" * (i // 4)
+    print(f"\\r[{bar:<25}] {i:3d}%", end="", flush=True)
+    time.sleep(0.05)
+print("\\nDone!")
+`,
+  },
+  {
+    name: 'async_demo.py',
+    title: 'asyncio',
+    desc: 'Top-level await and tasks',
+    code: `import asyncio
+
+async def worker(name, delay):
+    for i in range(3):
+        await asyncio.sleep(delay)
+        print(f"{name} tick {i}")
+    return name
+
+results = await asyncio.gather(worker("fast", 0.2), worker("slow", 0.35))
+print("finished:", results)
+`,
+  },
+  {
+    name: 'files_demo.py',
+    title: 'Files & sqlite',
+    desc: 'Write files, use sqlite3',
+    code: `import csv, sqlite3, json, os
+
+with open("people.csv", "w", newline="") as f:
+    w = csv.writer(f)
+    w.writerows([["name", "score"], ["Ada", 95], ["Linus", 88], ["Grace", 99]])
+
+db = sqlite3.connect("scores.db")
+db.execute("CREATE TABLE IF NOT EXISTS s (name TEXT, score INT)")
+with open("people.csv") as f:
+    rows = list(csv.DictReader(f))
+db.executemany("INSERT INTO s VALUES (:name, :score)", rows)
+print(db.execute("SELECT name, score FROM s ORDER BY score DESC").fetchall())
+
+print("Files in the working directory:", os.listdir("."))
+print("See the Files tab to download them.")
+`,
+  },
+  {
+    name: 'rich_demo.py',
+    title: 'Colours with rich',
+    desc: 'Installs a package from PyPI',
+    code: `# Packages that are not built in are installed automatically from PyPI.
+from rich.console import Console
+from rich.table import Table
+
+table = Table(title="Planets")
+table.add_column("Name", style="cyan")
+table.add_column("Moons", justify="right", style="magenta")
+for name, moons in [("Earth", 1), ("Mars", 2), ("Jupiter", 95), ("Saturn", 146)]:
+    table.add_row(name, str(moons))
+Console(force_terminal=True, width=60).print(table)
+`,
+  },
+  {
+    name: 'modules_demo.py',
+    title: 'Multiple files',
+    desc: 'Import your own modules',
+    code: `# Create a file named shapes.py (with the + button) containing, e.g.:
+#
+#     import math
+#     def circle_area(r):
+#         return math.pi * r ** 2
+#
+# Then run this file. Edits to shapes.py are picked up on every run.
+try:
+    from shapes import circle_area
+    print(circle_area(2))
+except ImportError:
+    print("Create shapes.py first (see the comment at the top).")
+`,
+  },
+  {
+    name: 'turtle_svg.py',
+    title: 'SVG drawing',
+    desc: 'Generate graphics with display()',
+    code: `from ide import SVG
+import math
+
+points = []
+for i in range(361):
+    t = math.radians(i)
+    r = 90 * math.sin(5 * t)
+    points.append(f"{110 + r * math.cos(t):.1f},{110 + r * math.sin(t):.1f}")
+
+display(SVG(f'''<svg xmlns="http://www.w3.org/2000/svg" width="220" height="220">
+  <polyline points="{' '.join(points)}" fill="none" stroke="#4f8cff" stroke-width="2"/>
+</svg>'''))
+`,
+  },
+];
+
+const WELCOME = `# Welcome! This is real CPython running entirely in your browser
+# (via Pyodide / WebAssembly). Nothing is installed on your computer.
+#
+#   Ctrl/Cmd+Enter   run this file
+#   Shift+Enter      run the selection (or current line) in the console
+#   Console panel    an interactive Python prompt that sees your variables
+#
+# Try the Examples menu for plots, pandas, input(), asyncio and more.
+
+import sys
+import platform
+
+print("Hello from Python", sys.version.split()[0], "on", platform.system())
+
+name = input("What's your name? ")
+squares = {n: n * n for n in range(1, 6)}
+print(f"Nice to meet you, {name}. Some squares: {squares}")
+`;
+
+
+// ===========================================================================
+// Configuration
+// ===========================================================================
+const PYODIDE_VERSION = '0.29.3';
+const params = new URLSearchParams(location.search);
+let INDEX_URL = params.get('pyodide') || `https://cdn.jsdelivr.net/pyodide/v${PYODIDE_VERSION}/full/`;
+if (!INDEX_URL.endsWith('/')) INDEX_URL += '/';
+
+const TEXT_EXT = /\.(py|pyi|txt|md|rst|json|csv|tsv|toml|ya?ml|ini|cfg|conf|html?|css|js|mjs|ts|xml|svg|sql|sh|log|env|gitignore|tex|r|c|h|cpp|java|rs|go)$/i;
+const $ = (sel) => document.querySelector(sel);
+
+// ---- Embedded sources (worker + Python runtime live in <script type="text/plain"> blocks)
+let _workerUrl = null;
+function workerUrl() {
+  if (!_workerUrl) {
+    const src = document.getElementById('worker-src').textContent;
+    _workerUrl = URL.createObjectURL(new Blob([src], { type: 'text/javascript' }));
+  }
+  return _workerUrl;
+}
+function pySources() {
+  return {
+    'ide.py': document.getElementById('py-ide').textContent,
+    'ide_mpl.py': document.getElementById('py-ide-mpl').textContent,
+  };
+}
+
+// ===========================================================================
+// Cross-origin isolation (needed for SharedArrayBuffer → input() and Ctrl+C)
+// ===========================================================================
+async function ensureIsolation() {
+  if (window.crossOriginIsolated) {
+    sessionStorage.removeItem('pyide:coi-reload');
+    return true;
+  }
+  // Optional: if coi-sw.js sits next to this page on a web server, use it to
+  // enable cross-origin isolation (full Ctrl+C support). Opened as a local
+  // file, the page works without it.
+  if (!('serviceWorker' in navigator) || location.protocol === 'file:' || !window.isSecureContext || params.has('nocoi')) return true;
+  try {
+    const probe = await fetch('coi-sw.js', { method: 'HEAD', cache: 'no-store' }).catch(() => null);
+    if (!probe || !probe.ok) return true;
+    await navigator.serviceWorker.register('coi-sw.js');
+    if (!sessionStorage.getItem('pyide:coi-reload')) {
+      sessionStorage.setItem('pyide:coi-reload', '1');
+      await navigator.serviceWorker.ready;
+      location.reload();
+      return false;
+    }
+  } catch (err) {
+    console.warn('Service worker registration failed; continuing without isolation', err);
+  }
+  return true; // continue in limited mode
+}
+
+// ===========================================================================
+// Settings
+// ===========================================================================
+const DEFAULT_SETTINGS = { theme: 'auto', fontSize: 14, autoInstall: true, clearOnRun: false, wrap: false };
+const settings = (() => {
+  try { return { ...DEFAULT_SETTINGS, ...JSON.parse(localStorage.getItem('pyide:settings') || '{}') }; }
+  catch { return { ...DEFAULT_SETTINGS }; }
+})();
+function saveSettings() {
+  try { localStorage.setItem('pyide:settings', JSON.stringify(settings)); } catch { /* private mode */ }
+}
+function applySettings() {
+  const root = document.documentElement;
+  if (settings.theme === 'auto') delete root.dataset.theme;
+  else root.dataset.theme = settings.theme;
+  root.style.setProperty('--font-size', settings.fontSize + 'px');
+  if (window.cm) {
+    cm.setOption('lineWrapping', !!settings.wrap);
+    cm.refresh();
+  }
+}
+
+// ===========================================================================
+// Persistent storage (IndexedDB, falling back to localStorage)
+// ===========================================================================
+const store = {
+  dbp: null,
+  db() {
+    if (!this.dbp) {
+      this.dbp = new Promise((resolve, reject) => {
+        const req = indexedDB.open('browser-python-ide', 1);
+        req.onupgradeneeded = () => req.result.createObjectStore('kv');
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+    return this.dbp;
+  },
+  async get(key) {
+    try {
+      const db = await this.db();
+      return await new Promise((resolve, reject) => {
+        const req = db.transaction('kv').objectStore('kv').get(key);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    } catch {
+      try { return JSON.parse(localStorage.getItem('pyide:' + key)); } catch { return undefined; }
+    }
+  },
+  async set(key, value) {
+    try {
+      const db = await this.db();
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction('kv', 'readwrite');
+        tx.objectStore('kv').put(value, key);
+        tx.oncomplete = resolve;
+        tx.onerror = () => reject(tx.error);
+      });
+    } catch {
+      try { localStorage.setItem('pyide:' + key, JSON.stringify(value)); } catch { /* quota */ }
+    }
+  },
+};
+
+// ===========================================================================
+// Small helpers
+// ===========================================================================
+let toastTimer = null;
+function toast(msg, ms = 2600) {
+  const el = $('#toast');
+  el.textContent = msg;
+  el.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => (el.hidden = true), ms);
+}
+
+function fmtBytes(n) {
+  if (n < 0) return '';
+  if (n < 1024) return n + ' B';
+  if (n < 1024 * 1024) return (n / 1024).toFixed(1) + ' KB';
+  return (n / 1024 / 1024).toFixed(1) + ' MB';
+}
+
+function fmtTime(ms) {
+  return ms < 1000 ? `${Math.round(ms)} ms` : `${(ms / 1000).toFixed(2)} s`;
+}
+
+function bytesToB64(bytes) {
+  let bin = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  return btoa(bin);
+}
+
+function b64ToBytes(b64) {
+  const bin = atob(b64);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
+function downloadBlob(data, name, type = 'application/octet-stream') {
+  const url = URL.createObjectURL(new Blob([data], { type }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
+function tryDecodeText(bytes) {
+  if (bytes.length > 2 * 1024 * 1024) return null;
+  if (bytes.subarray(0, 8000).includes(0)) return null;
+  try { return new TextDecoder('utf-8', { fatal: true }).decode(bytes); } catch { return null; }
+}
+
+function validName(name) {
+  return name && !name.startsWith('/') && !name.split('/').some((p) => !p || p === '.' || p === '..') && !/[\\:*?"<>|]/.test(name);
+}
+
+// ===========================================================================
+// Project model: text files are editor tabs, other files are binary blobs
+// ===========================================================================
+const project = { files: {}, order: [], active: null };
+const docs = new Map(); // path -> CodeMirror.Doc
+const dirty = new Set(); // paths to (re)send to the worker
+const removed = new Set(); // paths to delete in the worker
+let saveTimer = null;
+
+function modeFor(path) {
+  if (/\.pyi?$/i.test(path)) return { name: 'python', version: 3, singleLineStringErrors: false };
+  return 'text/plain';
+}
+
+function snapshotFiles() {
+  for (const [path, doc] of docs) project.files[path] = { text: doc.getValue() };
+}
+
+function scheduleSave() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(saveProject, 350);
+}
+
+async function saveProject() {
+  clearTimeout(saveTimer);
+  snapshotFiles();
+  await store.set('project', { files: project.files, order: project.order, active: project.active });
+}
+
+function uniqueName(base) {
+  if (!project.files[base]) return base;
+  const dot = base.lastIndexOf('.');
+  const stem = dot > 0 ? base.slice(0, dot) : base;
+  const ext = dot > 0 ? base.slice(dot) : '';
+  for (let i = 2; ; i++) {
+    const name = `${stem}${i}${ext}`;
+    if (!project.files[name]) return name;
+  }
+}
+
+function addTextFile(path, text, { open = true, overwrite = false } = {}) {
+  if (project.files[path] && !overwrite) path = uniqueName(path);
+  project.files[path] = { text };
+  if (docs.has(path)) {
+    docs.get(path).setValue(text);
+  } else {
+    const doc = CodeMirror.Doc(text, modeFor(path));
+    docs.set(path, doc);
+    project.order.push(path);
+  }
+  dirty.add(path);
+  removed.delete(path);
+  if (open) openFile(path);
+  else renderTabs();
+  scheduleSave();
+  return path;
+}
+
+function addBinaryFile(path, bytes) {
+  project.files[path] = { b64: bytesToB64(bytes) };
+  dirty.add(path);
+  removed.delete(path);
+  scheduleSave();
+}
+
+function deleteFile(path) {
+  delete project.files[path];
+  docs.delete(path);
+  project.order = project.order.filter((p) => p !== path);
+  dirty.delete(path);
+  removed.add(path);
+  if (project.active === path) {
+    project.active = null;
+    if (!project.order.length) addTextFile('main.py', '', { open: false });
+    openFile(project.order[0]);
+  }
+  renderTabs();
+  scheduleSave();
+}
+
+function renameFile(oldPath, newPath) {
+  if (oldPath === newPath) return true;
+  if (!validName(newPath)) { toast('Invalid file name'); return false; }
+  if (project.files[newPath]) { toast(`${newPath} already exists`); return false; }
+  const doc = docs.get(oldPath);
+  project.files[newPath] = project.files[oldPath];
+  delete project.files[oldPath];
+  docs.delete(oldPath);
+  docs.set(newPath, doc);
+  if (cm.getDoc() === doc) cm.setOption('mode', modeFor(newPath));
+  project.order = project.order.map((p) => (p === oldPath ? newPath : p));
+  if (project.active === oldPath) project.active = newPath;
+  removed.add(oldPath);
+  dirty.delete(oldPath);
+  dirty.add(newPath);
+  removed.delete(newPath);
+  renderTabs();
+  scheduleSave();
+  return true;
+}
+
+function openFile(path) {
+  if (!docs.has(path)) return;
+  project.active = path;
+  const doc = docs.get(path);
+  if (cm.getDoc() !== doc) cm.swapDoc(doc);
+  cm.setOption('mode', modeFor(path));
+  renderTabs();
+  updateCursorStatus();
+  cm.focus();
+  scheduleSave();
+}
+
+function renderTabs() {
+  const tabs = $('#tabs');
+  tabs.textContent = '';
+  for (const path of project.order) {
+    const tab = document.createElement('div');
+    tab.className = 'tab' + (path === project.active ? ' active' : '');
+    tab.setAttribute('role', 'tab');
+    tab.tabIndex = 0;
+    tab.title = `${path} — double-click to rename`;
+    const label = document.createElement('span');
+    label.textContent = path;
+    const close = document.createElement('span');
+    close.className = 'close';
+    close.textContent = '×';
+    close.title = 'Delete file';
+    close.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const text = docs.get(path)?.getValue() || '';
+      if (text.trim() && !confirm(`Delete ${path}? This cannot be undone.`)) return;
+      deleteFile(path);
+    });
+    tab.append(label, close);
+    tab.addEventListener('click', () => openFile(path));
+    tab.addEventListener('keydown', (e) => { if (e.key === 'Enter') openFile(path); if (e.key === 'F2') startRename(tab, path); });
+    tab.addEventListener('dblclick', () => startRename(tab, path));
+    tabs.appendChild(tab);
+    if (path === project.active) requestAnimationFrame(() => tab.scrollIntoView({ block: 'nearest', inline: 'nearest' }));
+  }
+}
+
+function startRename(tab, path) {
+  const input = document.createElement('input');
+  input.className = 'rename';
+  input.value = path;
+  input.spellcheck = false;
+  tab.textContent = '';
+  tab.appendChild(input);
+  input.focus();
+  const dot = path.lastIndexOf('.');
+  input.setSelectionRange(0, dot > 0 ? dot : path.length);
+  let done = false;
+  const finish = (commit) => {
+    if (done) return;
+    done = true;
+    const name = input.value.trim();
+    if (commit && name && !renameFile(path, name)) { /* keep old name */ }
+    renderTabs();
+    cm.focus();
+  };
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') finish(true);
+    if (e.key === 'Escape') finish(false);
+    e.stopPropagation();
+  });
+  input.addEventListener('blur', () => finish(true));
+  input.addEventListener('click', (e) => e.stopPropagation());
+}
+
+function newFile() {
+  const path = addTextFile(uniqueName('untitled.py'), '');
+  const tab = [...document.querySelectorAll('.tab')].find((t) => t.textContent.startsWith(path));
+  if (tab) startRename(tab, path);
+}
+
+function collectDirty() {
+  const files = {};
+  for (const path of dirty) {
+    if (docs.has(path)) files[path] = { text: docs.get(path).getValue() };
+    else if (project.files[path]) files[path] = project.files[path];
+  }
+  dirty.clear();
+  const gone = [...removed];
+  removed.clear();
+  return { files, removed: gone };
+}
+
+function allFiles() {
+  snapshotFiles();
+  dirty.clear();
+  removed.clear();
+  return { ...project.files };
+}
+
+// ===========================================================================
+// Python worker client
+// ===========================================================================
+class Python {
+  constructor() {
+    this.worker = null;
+    this.pending = new Map();
+    this.nextId = 1;
+    this.ready = false;
+    this.waitingInput = false;
+  }
+
+  start(files) {
+    this.ready = false;
+    this.version = null;
+    this.shared = window.crossOriginIsolated && typeof SharedArrayBuffer !== 'undefined'
+      ? { interrupt: new SharedArrayBuffer(1), stdin: new SharedArrayBuffer(8 + (1 << 20)) }
+      : null;
+    this.interruptView = this.shared ? new Uint8Array(this.shared.interrupt) : null;
+    this.stdinCtrl = this.shared ? new Int32Array(this.shared.stdin, 0, 2) : null;
+    this.stdinData = this.shared ? new Uint8Array(this.shared.stdin, 8) : null;
+    this.worker = new Worker(workerUrl());
+    this.worker.onmessage = (e) => this.onMessage(e.data);
+    this.worker.onerror = (e) => {
+      e.preventDefault?.();
+      onFatal(e.message || 'The Python worker failed to start.');
+    };
+    this.worker.postMessage({ type: 'init', indexURL: INDEX_URL, shared: this.shared, files, pySources: pySources() });
+  }
+
+  call(type, payload = {}, transfer = []) {
+    const id = this.nextId++;
+    return new Promise((resolve, reject) => {
+      this.pending.set(id, { resolve, reject });
+      this.worker.postMessage({ ...payload, type, id }, transfer);
+    });
+  }
+
+  onMessage(msg) {
+    switch (msg.type) {
+      case 'stdout': term.write(msg.text, 'stdout'); break;
+      case 'stderr': term.write(msg.text, 'stderr'); break;
+      case 'display': term.rich(msg.mime, msg.data, msg.meta); break;
+      case 'status': term.system(msg.text); break;
+      case 'stdin-request': showStdinField(); break;
+      case 'error-location': markError(msg.path, msg.line); break;
+      case 'ready':
+        this.ready = true;
+        this.version = msg;
+        onReady(msg);
+        break;
+      case 'fatal': onFatal(msg.error); break;
+      case 'reply': {
+        const p = this.pending.get(msg.id);
+        if (!p) break;
+        this.pending.delete(msg.id);
+        if ('error' in msg) p.reject(new Error(msg.error));
+        else p.resolve(msg.result);
+        break;
+      }
+    }
+  }
+
+  interrupt() {
+    if (this.waitingInput) {
+      this.answerStdin(null, 2); // input() raises KeyboardInterrupt
+      return;
+    }
+    // First ask the worker to cancel a running top-level `await` (async code).
+    // The worker only sees this message while Python is suspended, so if it is
+    // still busy shortly afterwards it is running synchronous code: raise
+    // KeyboardInterrupt through the shared interrupt buffer (when available).
+    this.worker?.postMessage({ type: 'softInterrupt' });
+    if (this.shared) {
+      clearTimeout(this.hardTimer);
+      this.hardTimer = setTimeout(() => { if (ui.busy) this.interruptView[0] = 2; }, 300);
+    }
+  }
+
+  answerStdin(text, state = 1) {
+    this.waitingInput = false;
+    if (!this.stdinCtrl) {
+      this.worker?.postMessage({ type: 'stdinReply', text, state });
+      return;
+    }
+    if (state === 1) {
+      const bytes = new TextEncoder().encode(text);
+      const n = Math.min(bytes.length, this.stdinData.length);
+      this.stdinData.set(bytes.subarray(0, n));
+      this.stdinCtrl[1] = n;
+    }
+    Atomics.store(this.stdinCtrl, 0, state);
+    Atomics.notify(this.stdinCtrl, 0);
+  }
+
+  terminate() {
+    this.worker?.terminate();
+    this.worker = null;
+    this.ready = false;
+    this.waitingInput = false;
+    for (const p of this.pending.values()) p.reject(new Error('Python was restarted'));
+    this.pending.clear();
+  }
+}
+
+// ===========================================================================
+// UI state
+// ===========================================================================
+let cm; // CodeMirror editor
+let term; // Terminal
+const py = new Python();
+const ui = { busy: false, runStart: 0, timer: null, stopTimer: null, continuation: false, indent: '' };
+let stdinField = null;
+
+function setState(kind, text) {
+  const el = $('#st-state');
+  el.className = 'st-state ' + kind;
+  el.lastElementChild.textContent = text;
+}
+
+function setBusy(busy, label = 'Running') {
+  ui.busy = busy;
+  $('#run-btn').disabled = busy || !py.ready;
+  const stop = $('#stop-btn');
+  stop.disabled = !busy;
+  stop.classList.toggle('running', busy);
+  stop.querySelector('span').textContent = 'Stop';
+  clearTimeout(ui.stopTimer);
+  clearTimeout(py.hardTimer);
+  clearInterval(ui.timer);
+  $('#prompt-row').hidden = busy || !py.ready;
+  if (busy) {
+    ui.runStart = performance.now();
+    const tick = () => {
+      if (py.waitingInput) setState('input', 'Waiting for input…');
+      else setState('busy', `${label}… ${fmtTime(performance.now() - ui.runStart)}`);
+    };
+    tick();
+    ui.timer = setInterval(tick, 200);
+  } else {
+    removeStdinField();
+    if (py.ready) setState('ready', 'Ready');
+    focusRepl(false);
+  }
+}
+
+function focusRepl(force = true) {
+  if (ui.busy) return;
+  const active = document.activeElement;
+  if (!force && active && (active.closest('.CodeMirror') || active.matches('input, textarea, select'))) return;
+  if ($('#panel-console').hidden) return;
+  $('#repl').focus({ preventScroll: true });
+}
+
+// ===========================================================================
+// Startup
+// ===========================================================================
+async function loadProject() {
+  const saved = await store.get('project');
+  if (saved && saved.files && Object.keys(saved.files).length) {
+    project.files = saved.files;
+    project.order = (saved.order || []).filter((p) => saved.files[p] && saved.files[p].text !== undefined);
+    for (const [p, f] of Object.entries(saved.files)) if (f.text !== undefined && !project.order.includes(p)) project.order.push(p);
+    project.active = saved.active;
+  } else {
+    project.files = { 'main.py': { text: WELCOME } };
+    project.order = ['main.py'];
+    project.active = 'main.py';
+  }
+  for (const path of project.order) docs.set(path, CodeMirror.Doc(project.files[path].text, modeFor(path)));
+  if (!project.order.length) {
+    project.files['main.py'] = { text: '' };
+    project.order = ['main.py'];
+    docs.set('main.py', CodeMirror.Doc('', modeFor('main.py')));
+  }
+  if (!docs.has(project.active)) project.active = project.order[0];
+}
+
+async function importSharedFromHash() {
+  const m = location.hash.match(/^#code=([A-Za-z0-9_-]+)$/);
+  if (!m) return;
+  history.replaceState(null, '', location.pathname + location.search);
+  try {
+    const data = JSON.parse(await decodeShare(m[1]));
+    const names = Object.keys(data.files || {});
+    if (!names.length) return;
+    const clash = names.filter((n) => project.files[n]);
+    const msg = `Open the shared code (${names.join(', ')})?` + (clash.length ? `\n\nThis will replace your current: ${clash.join(', ')}` : '');
+    if (!confirm(msg)) return;
+    for (const [name, text] of Object.entries(data.files)) {
+      if (validName(name) && typeof text === 'string') addTextFile(name, text, { open: false, overwrite: true });
+    }
+    openFile(data.active && docs.has(data.active) ? data.active : names[0]);
+    toast('Shared code loaded');
+  } catch (err) {
+    console.error(err);
+    toast('Could not read the shared link');
+  }
+}
+
+function createEditor() {
+  const mod = /Mac|iPhone|iPad/.test(navigator.platform) ? 'Cmd' : 'Ctrl';
+  cm = CodeMirror($('#editor'), {
+    value: '',
+    mode: modeFor('main.py'),
+    lineNumbers: true,
+    indentUnit: 4,
+    tabSize: 4,
+    indentWithTabs: false,
+    matchBrackets: true,
+    autoCloseBrackets: true,
+    styleActiveLine: true,
+    lineWrapping: !!settings.wrap,
+    keyMap: CodeMirror.keyMap.sublime ? 'sublime' : 'default',
+    extraKeys: {
+      [`${mod}-Enter`]: () => runFile(),
+      'Shift-Enter': () => runSelection(),
+      'Ctrl-Space': () => editorComplete(),
+      [`${mod}-S`]: () => { saveProject().then(() => toast('Saved in this browser')); },
+      [`${mod}-/`]: 'toggleComment',
+      'Alt-G': 'jumpToLine',
+      Tab: (ed) => {
+        if (ed.somethingSelected()) ed.indentSelection('add');
+        else ed.replaceSelection(' '.repeat(4 - (ed.getCursor().ch % 4)), 'end', '+input');
+      },
+      'Shift-Tab': (ed) => ed.indentSelection('subtract'),
+      'Ctrl-L': false,
+    },
+  });
+  window.cm = cm;
+  cm.on('changes', (ed) => {
+    const path = project.active;
+    dirty.add(path);
+    clearErrorMarks(path);
+    scheduleSave();
+  });
+  cm.on('cursorActivity', updateCursorStatus);
+  cm.on('inputRead', (ed, change) => {
+    if (change.text.length === 1 && change.text[0] === '.' && py.ready && !ui.busy && /\.pyi?$/.test(project.active)) {
+      setTimeout(() => editorComplete(), 0);
+    }
+  });
+}
+
+function updateCursorStatus() {
+  if (!cm) return;
+  const c = cm.getCursor();
+  $('#st-cursor').textContent = `Ln ${c.line + 1}, Col ${c.ch + 1}`;
+}
+
+async function main() {
+  applySettings();
+  if (!(await ensureIsolation())) return;
+  if (!window.CodeMirror) {
+    document.body.innerHTML = '<p style="padding:24px">Could not load the code editor from cdnjs.cloudflare.com. Check your connection and reload.</p>';
+    return;
+  }
+  term = new Terminal($('#output'), $('#panel-console'));
+  createEditor();
+  await loadProject();
+  cm.swapDoc(docs.get(project.active));
+  renderTabs();
+  updateCursorStatus();
+  await importSharedFromHash();
+  wireUi();
+  renderExamples();
+  restoreSplit();
+
+  const iso = $('#st-iso');
+  if (window.crossOriginIsolated) {
+    iso.textContent = 'input() & interrupt enabled';
+    iso.title = 'Cross-origin isolated: input() blocks, Stop interrupts running code.';
+  } else if (typeof WebAssembly.Suspending === 'function') {
+    iso.textContent = 'input() enabled · basic interrupt';
+    iso.title = 'input() works via WebAssembly JSPI. Stop interrupts code waiting on input/sleep/await; busy loops need Force stop. Put coi-sw.js next to this page on a web server for full interrupt support.';
+  } else {
+    iso.textContent = '⚠ limited mode';
+    iso.classList.add('warn');
+    iso.title = 'This browser supports neither cross-origin isolation here nor JSPI, so input() is unavailable and Stop restarts Python.';
+  }
+  bootPython();
+}
+
+function bootPython() {
+  setState('busy', 'Loading Python…');
+  $('#run-btn').disabled = true;
+  $('#prompt-row').hidden = true;
+  term.system(`Loading Python (Pyodide ${PYODIDE_VERSION}, ~10 MB on first visit, then cached)…`);
+  ui.bootStart = performance.now();
+  py.start(allFiles());
+}
+
+function onReady(info) {
+  const secs = ((performance.now() - ui.bootStart) / 1000).toFixed(1);
+  term.write(`Python ${info.python} (Pyodide ${info.version}) on WebAssembly/Emscripten — ready in ${secs}s\n`, 'banner');
+  term.write('Type Python below, or press Ctrl/⌘+Enter in the editor to run the current file.\n', 'banner');
+  if (!info.isolated && typeof WebAssembly.Suspending !== 'function') {
+    term.system('Note: this browser cannot pause Python for input(); try a current Chrome, Edge or Firefox.');
+  }
+  $('#st-version').textContent = `Python ${info.python} · Pyodide ${info.version}`;
+  ui.continuation = false;
+  setPrompt();
+  setBusy(false);
+  // Warm up the completion engine in the background.
+  setTimeout(() => { if (py.ready && !ui.busy) py.call('complete', { source: 'im', line: 1, column: 2, mode: 'editor', path: 'main.py' }).catch(() => {}); }, 2500);
+}
+
+function onFatal(error) {
+  setState('error', 'Python failed to load');
+  term.write(`\nPython failed to start:\n${error}\n`, 'stderr');
+  term.system('Check your internet connection (Pyodide is loaded from cdn.jsdelivr.net), then press Restart.');
+  ui.busy = false;
+  $('#stop-btn').disabled = true;
+}
+
+// ===========================================================================
+// Running code
+// ===========================================================================
+function runTarget() {
+  if (/\.py$/.test(project.active)) return project.active;
+  return project.order.find((p) => p === 'main.py') || project.order.find((p) => p.endsWith('.py'));
+}
+
+async function runFile() {
+  if (!py.ready || ui.busy) return;
+  const path = runTarget();
+  if (!path) { toast('No .py file to run'); return; }
+  saveProject();
+  if (settings.clearOnRun) term.clear();
+  showPanel('console');
+  clearErrorMarks();
+  term.rule(`python ${path}`);
+  setBusy(true);
+  const t0 = performance.now();
+  let status = 'ok';
+  try {
+    status = await py.call('run', { ...collectDirty(), main: path, autoInstall: settings.autoInstall });
+  } catch (err) {
+    status = 'error';
+    if (py.worker) term.write(String(err.message || err) + '\n', 'stderr');
+  }
+  if (py.worker && py.ready) {
+    const label = status === 'interrupted' ? 'Interrupted' : status === 'error' ? 'Exited with an error' : 'Finished';
+    term.done(`${label} in ${fmtTime(performance.now() - t0)}`, status !== 'ok');
+    setBusy(false);
+    if (!$('#panel-files').hidden) refreshFiles();
+  }
+}
+
+async function runSelection() {
+  if (!py.ready || ui.busy) return;
+  let code = cm.getSelection();
+  if (!code.trim()) {
+    const line = cm.getCursor().line;
+    code = cm.getLine(line);
+    if (line < cm.lastLine()) cm.setCursor({ line: line + 1, ch: 0 });
+  }
+  code = dedent(code).replace(/\s+$/, '');
+  if (!code.trim()) return;
+  await syncFiles();
+  await replExecute(code, true);
+}
+
+function dedent(text) {
+  const lines = text.split('\n');
+  const indents = lines.filter((l) => l.trim()).map((l) => l.match(/^\s*/)[0].length);
+  const min = indents.length ? Math.min(...indents) : 0;
+  return lines.map((l) => l.slice(min)).join('\n');
+}
+
+async function syncFiles() {
+  const payload = collectDirty();
+  if (Object.keys(payload.files).length || payload.removed.length) await py.call('writeFiles', payload);
+}
+
+function stop() {
+  if (!ui.busy) return;
+  const btn = $('#stop-btn');
+  if (btn.dataset.force === '1') {
+    btn.dataset.force = '';
+    restart('Python was stopped and restarted.');
+    return;
+  }
+  if (py.waitingInput && stdinField) {
+    const typed = stdinField.value;
+    removeStdinField();
+    term.endInputLine(typed + '^C');
+  }
+  py.interrupt();
+  clearTimeout(ui.stopTimer);
+  ui.stopTimer = setTimeout(() => {
+    if (!ui.busy) return;
+    btn.dataset.force = '1';
+    btn.querySelector('span').textContent = 'Force stop';
+    btn.title = 'Python is not responding to the interrupt; force-restart it';
+  }, 2000);
+}
+
+function restart(message = 'Restarting Python…') {
+  py.terminate();
+  clearInterval(ui.timer);
+  ui.busy = false;
+  const btn = $('#stop-btn');
+  btn.dataset.force = '';
+  btn.title = 'Interrupt (Ctrl+C in the console)';
+  removeStdinField();
+  clearErrorMarks();
+  term.rule(message);
+  bootPython();
+  $('#stop-btn').disabled = true;
+  $('#stop-btn').classList.remove('running');
+  $('#stop-btn').querySelector('span').textContent = 'Stop';
+}
+
+// ===========================================================================
+// Error markers in the editor
+// ===========================================================================
+const errorMarks = []; // {path, handle}
+
+function markError(path, line) {
+  const doc = docs.get(path);
+  if (!doc) return;
+  const handle = doc.addLineClass(line - 1, 'background', 'cm-error-line');
+  errorMarks.push({ path, doc, handle });
+}
+
+function clearErrorMarks(path) {
+  for (let i = errorMarks.length - 1; i >= 0; i--) {
+    const m = errorMarks[i];
+    if (path && m.path !== path) continue;
+    m.doc.removeLineClass(m.handle, 'background', 'cm-error-line');
+    errorMarks.splice(i, 1);
+  }
+}
+
+function jumpTo(path, line) {
+  if (!docs.has(path)) return;
+  openFile(path);
+  cm.setCursor({ line: line - 1, ch: 0 });
+  cm.scrollIntoView({ line: line - 1, ch: 0 }, 80);
+  cm.focus();
+}
+
+// ===========================================================================
+// Console (REPL) and stdin
+// ===========================================================================
+const replHistory = (() => {
+  try { return JSON.parse(localStorage.getItem('pyide:replHistory') || '[]'); } catch { return []; }
+})();
+let histPos = replHistory.length;
+let histDraft = '';
+
+function pushHistory(text) {
+  if (!text.trim()) return;
+  if (replHistory[replHistory.length - 1] !== text) replHistory.push(text);
+  while (replHistory.length > 500) replHistory.shift();
+  try { localStorage.setItem('pyide:replHistory', JSON.stringify(replHistory)); } catch { /* ignore */ }
+  histPos = replHistory.length;
+}
+
+function setPrompt() {
+  $('#ps').textContent = ui.continuation ? '...' : '>>>';
+}
+
+function autosizeRepl() {
+  const ta = $('#repl');
+  ta.style.height = 'auto';
+  ta.style.height = ta.scrollHeight + 'px';
+}
+
+async function replExecute(text, asCell = false) {
+  const prompt = ui.continuation ? '...' : '>>>';
+  term.echo(prompt, text);
+  pushHistory(text);
+  setBusy(true, 'Running');
+  let result = 'complete';
+  try {
+    if (asCell || (!ui.continuation && text.includes('\n'))) {
+      result = await py.call('repl', { line: text, cell: true, autoInstall: settings.autoInstall });
+    } else {
+      const lines = text.split('\n');
+      for (const line of lines) {
+        result = await py.call('repl', { line: /^\s+$/.test(line) ? '' : line, autoInstall: settings.autoInstall });
+      }
+      if (result === 'incomplete' && lines.length > 1) {
+        result = await py.call('repl', { line: '', autoInstall: settings.autoInstall });
+      }
+    }
+  } catch (err) {
+    if (py.worker) term.write(String(err.message || err) + '\n', 'stderr');
+    result = 'error';
+  }
+  if (!py.worker || !py.ready) return;
+  ui.continuation = result === 'incomplete';
+  const lastLine = text.split('\n').pop();
+  if (ui.continuation) {
+    const indent = lastLine.match(/^\s*/)[0];
+    ui.indent = /:\s*(#.*)?$/.test(lastLine) ? indent + '    ' : indent;
+  } else {
+    ui.indent = '';
+  }
+  setPrompt();
+  setBusy(false);
+  const ta = $('#repl');
+  ta.value = ui.indent;
+  autosizeRepl();
+  focusRepl(true);
+  if (!$('#panel-files').hidden) refreshFiles();
+}
+
+function commonPrefix(words) {
+  if (!words.length) return '';
+  let p = words[0];
+  for (const w of words) while (!w.startsWith(p)) p = p.slice(0, -1);
+  return p;
+}
+
+async function replComplete() {
+  const ta = $('#repl');
+  const before = ta.value.slice(0, ta.selectionStart);
+  const lines = before.split('\n');
+  try {
+    const r = await withTimeout(py.call('complete', {
+      source: ta.value, line: lines.length, column: lines[lines.length - 1].length, mode: 'console', path: '',
+    }), 4000);
+    const typed = before.slice(before.length - r.prefix);
+    const all = r.items.map((i) => i[0]);
+    const exact = all.filter((w) => w.startsWith(typed));
+    const items = exact.length ? exact : all;
+    if (!items.length) return;
+    const common = items.length === 1 ? items[0] : commonPrefix(items);
+    const insert = common.slice(r.prefix);
+    if (insert) {
+      ta.setRangeText(insert, ta.selectionStart, ta.selectionEnd, 'end');
+      autosizeRepl();
+    } else if (items.length > 1) {
+      term.echo(ui.continuation ? '...' : '>>>', ta.value);
+      term.write(items.slice(0, 120).join('  ') + (items.length > 120 ? `  … (${items.length} total)` : '') + '\n', 'completions');
+    }
+  } catch { /* busy or timed out */ }
+}
+
+function withTimeout(promise, ms) {
+  return Promise.race([promise, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))]);
+}
+
+function showStdinField() {
+  py.waitingInput = true;
+  showPanel('console');
+  removeStdinField();
+  const line = term.currentLine();
+  const input = document.createElement('input');
+  input.className = 'stdin-field';
+  input.spellcheck = false;
+  input.autocomplete = 'off';
+  input.setAttribute('aria-label', 'Program input');
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const value = input.value;
+      removeStdinField();
+      term.endInputLine(value);
+      py.answerStdin(value);
+    } else if ((e.key === 'c' || e.key === 'C') && e.ctrlKey && input.selectionStart === input.selectionEnd) {
+      e.preventDefault();
+      removeStdinField();
+      term.endInputLine(input.value + '^C');
+      py.interrupt();
+    } else if ((e.key === 'd' || e.key === 'D') && e.ctrlKey && !input.value) {
+      e.preventDefault();
+      removeStdinField();
+      term.endInputLine('');
+      py.answerStdin(null, 3);
+    }
+  });
+  line.appendChild(input);
+  stdinField = input;
+  term.scrollToEnd(true);
+  input.focus({ preventScroll: true });
+}
+
+function removeStdinField() {
+  if (stdinField) {
+    stdinField.remove();
+    stdinField = null;
+  }
+}
+
+// ===========================================================================
+// Editor completion (jedi in the worker)
+// ===========================================================================
+function editorComplete() {
+  if (!py.ready || ui.busy) return;
+  const hint = (ed, callback) => {
+    const cur = ed.getCursor();
+    withTimeout(py.call('complete', {
+      source: ed.getValue(), line: cur.line + 1, column: cur.ch, mode: 'editor', path: project.active,
+    }), 6000).then((r) => {
+      if (!r.items.length) return callback(null);
+      callback({
+        list: r.items.map(([text, type]) => ({
+          text,
+          render(el) {
+            el.textContent = text;
+            if (type) {
+              const t = document.createElement('span');
+              t.className = 'ht';
+              t.textContent = type;
+              el.appendChild(t);
+            }
+          },
+        })),
+        from: CodeMirror.Pos(cur.line, cur.ch - r.prefix),
+        to: cur,
+      });
+    }).catch(() => callback(null));
+  };
+  hint.async = true;
+  cm.showHint({ hint, completeSingle: false });
+}
+
+// ===========================================================================
+// Side panels
+// ===========================================================================
+function showPanel(name) {
+  for (const tab of document.querySelectorAll('.ptab')) tab.classList.toggle('active', tab.dataset.panel === name);
+  for (const p of ['console', 'files', 'packages']) $(`#panel-${p}`).hidden = p !== name;
+  $('#clear-btn').hidden = name !== 'console';
+  if (name === 'files') refreshFiles();
+  if (name === 'packages') refreshPackages();
+}
+
+async function refreshFiles() {
+  const list = $('#file-list');
+  if (!py.ready) { list.innerHTML = '<li class="empty">Python is loading…</li>'; return; }
+  let files;
+  try {
+    await syncFiles();
+    files = await withTimeout(py.call('listFiles'), 5000);
+  } catch {
+    list.innerHTML = '<li class="empty">Busy — refresh when the program finishes.</li>';
+    return;
+  }
+  list.textContent = '';
+  if (!files.length) list.innerHTML = '<li class="empty">No files yet.</li>';
+  for (const [path, size] of files) {
+    const li = document.createElement('li');
+    const name = document.createElement('span');
+    name.className = 'name';
+    name.textContent = path;
+    name.title = '/home/pyodide/' + path;
+    const sz = document.createElement('span');
+    sz.className = 'size';
+    sz.textContent = fmtBytes(size);
+    const acts = document.createElement('span');
+    acts.className = 'acts';
+    const saved = !!project.files[path];
+    const btn = (label, title, fn) => {
+      const b = document.createElement('button');
+      b.textContent = label;
+      b.title = title;
+      b.addEventListener('click', fn);
+      acts.appendChild(b);
+    };
+    if (docs.has(path)) btn('Edit', 'Show in editor', () => openFile(path));
+    else if (TEXT_EXT.test(path) && size < 2 * 1024 * 1024) btn('Open', 'Open in the editor (and keep it)', () => openFromFs(path));
+    btn('Download', 'Download to your computer', () => downloadFromFs(path));
+    if (!saved) btn('Keep', 'Save this file in the browser so it survives restarts', () => keepFromFs(path));
+    btn('Delete', 'Delete', async () => {
+      if (!confirm(`Delete ${path}?`)) return;
+      if (project.files[path]) deleteFile(path);
+      try { await py.call('deleteFile', { path }); } catch { /* already gone */ }
+      refreshFiles();
+    });
+    if (saved) {
+      const s = document.createElement('span');
+      s.className = 'saved';
+      s.textContent = '●';
+      s.title = 'Saved in this browser';
+      li.append(s);
+    }
+    li.append(name, sz, acts);
+    list.appendChild(li);
+  }
+}
+
+async function readFromFs(path) {
+  return await py.call('readFile', { path });
+}
+
+async function openFromFs(path) {
+  const bytes = await readFromFs(path);
+  const text = tryDecodeText(bytes);
+  if (text === null) { toast('That file is not UTF-8 text'); return; }
+  addTextFile(path, text, { overwrite: true });
+  refreshFiles();
+}
+
+async function keepFromFs(path) {
+  const bytes = await readFromFs(path);
+  const text = TEXT_EXT.test(path) ? tryDecodeText(bytes) : null;
+  if (text !== null) addTextFile(path, text, { open: false, overwrite: true });
+  else addBinaryFile(path, bytes);
+  dirty.delete(path);
+  toast(`${path} will be kept in this browser`);
+  refreshFiles();
+}
+
+async function downloadFromFs(path) {
+  try {
+    await syncFiles();
+    const bytes = await readFromFs(path);
+    downloadBlob(bytes, path.split('/').pop());
+  } catch (err) {
+    toast('Download failed: ' + err.message);
+  }
+}
+
+async function uploadFiles(fileList) {
+  let count = 0;
+  for (const file of fileList) {
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const text = TEXT_EXT.test(file.name) || !/\.[a-z0-9]+$/i.test(file.name) ? tryDecodeText(bytes) : null;
+    if (text !== null && bytes.length < 1024 * 1024) {
+      addTextFile(file.name, text, { open: /\.pyi?$/i.test(file.name), overwrite: true });
+    } else {
+      addBinaryFile(file.name, bytes);
+    }
+    count++;
+  }
+  if (py.ready) {
+    try { await syncFiles(); } catch { /* will sync on next run */ }
+  }
+  toast(`Added ${count} file${count === 1 ? '' : 's'}`);
+  if (!$('#panel-files').hidden) refreshFiles();
+}
+
+let lockPackages = null;
+async function refreshPackages() {
+  const list = $('#pkg-list');
+  if (py.ready) {
+    try {
+      const pkgs = await withTimeout(py.call('listPackages'), 5000);
+      ui.installed = new Map(pkgs.map(([n, v]) => [n.toLowerCase(), v]));
+      $('#pkg-count').textContent = `(${pkgs.length})`;
+      renderPkgList(list, pkgs, $('#pkg-filter').value, false);
+    } catch {
+      list.innerHTML = '<li class="muted">Busy — try again when the program finishes.</li>';
+    }
+  }
+  if (!lockPackages) {
+    try {
+      const lock = await (await fetch(INDEX_URL + 'pyodide-lock.json')).json();
+      lockPackages = Object.values(lock.packages)
+        .filter((p) => p.package_type === 'package' || !p.package_type)
+        .map((p) => [p.name, p.version])
+        .sort((a, b) => a[0].localeCompare(b[0]));
+    } catch {
+      lockPackages = [];
+    }
+  }
+  $('#avail-count').textContent = `(${lockPackages.length})`;
+  renderPkgList($('#avail-list'), lockPackages, $('#avail-filter').value, true);
+}
+
+function renderPkgList(list, pkgs, filter, installable) {
+  list.textContent = '';
+  const f = (filter || '').toLowerCase().trim();
+  const shown = pkgs.filter(([n]) => !f || n.toLowerCase().includes(f)).slice(0, 400);
+  for (const [name, version] of shown) {
+    const li = document.createElement('li');
+    const n = document.createElement('span');
+    n.className = 'name';
+    n.textContent = name;
+    const v = document.createElement('span');
+    v.className = 'ver';
+    v.textContent = version;
+    li.append(n, v);
+    if (installable) {
+      const installed = ui.installed && ui.installed.has(name.toLowerCase());
+      const b = document.createElement('button');
+      b.textContent = installed ? 'Installed' : 'Install';
+      b.disabled = installed;
+      b.addEventListener('click', () => installPackages([name]));
+      li.appendChild(b);
+    }
+    list.appendChild(li);
+  }
+  if (!shown.length) list.innerHTML = '<li class="muted">No matches</li>';
+}
+
+async function installPackages(names) {
+  if (!py.ready || ui.busy || !names.length) return;
+  term.echo('$', `pip install ${names.join(' ')}`);
+  setBusy(true, 'Installing');
+  try {
+    await py.call('install', { names });
+  } catch (err) {
+    term.write(String(err.message || err) + '\n', 'stderr');
+  }
+  if (py.ready) {
+    setBusy(false);
+    refreshPackages();
+    toast(`pip install ${names.join(' ')} finished — see Console for details`);
+  }
+}
+
+// ===========================================================================
+// Sharing
+// ===========================================================================
+async function encodeShare(text) {
+  const bytes = new TextEncoder().encode(text);
+  let out;
+  if (window.CompressionStream) {
+    const stream = new Blob([bytes]).stream().pipeThrough(new CompressionStream('deflate-raw'));
+    out = new Uint8Array(await new Response(stream).arrayBuffer());
+    out = new Uint8Array([1, ...out]);
+  } else {
+    out = new Uint8Array([0, ...bytes]);
+  }
+  return bytesToB64(out).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+async function decodeShare(s) {
+  const bytes = b64ToBytes(s.replace(/-/g, '+').replace(/_/g, '/'));
+  const body = bytes.subarray(1);
+  if (bytes[0] === 1) {
+    const stream = new Blob([body]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+    return await new Response(stream).text();
+  }
+  return new TextDecoder().decode(body);
+}
+
+async function share() {
+  snapshotFiles();
+  const files = {};
+  for (const p of project.order) files[p] = docs.get(p).getValue();
+  const encoded = await encodeShare(JSON.stringify({ files, active: project.active }));
+  const url = `${location.origin}${location.pathname}#code=${encoded}`;
+  if (url.length > 100000) toast('Warning: this link is very long and may not work everywhere', 4000);
+  try {
+    await navigator.clipboard.writeText(url);
+    toast('Share link copied to the clipboard');
+  } catch {
+    prompt('Copy this link:', url);
+  }
+}
+
+// ===========================================================================
+// Examples menu, splitter, wiring
+// ===========================================================================
+function renderExamples() {
+  const menu = $('#examples-menu');
+  for (const ex of EXAMPLES) {
+    const b = document.createElement('button');
+    b.className = 'item';
+    b.setAttribute('role', 'menuitem');
+    b.innerHTML = `<span></span><small></small>`;
+    b.firstChild.textContent = ex.title;
+    b.lastChild.textContent = ex.desc;
+    b.addEventListener('click', () => {
+      closeMenus();
+      if (project.files[ex.name] && docs.get(ex.name).getValue() === ex.code) openFile(ex.name);
+      else addTextFile(ex.name, ex.code);
+      toast(`Opened ${ex.name} — press Run`);
+    });
+    menu.appendChild(b);
+  }
+}
+
+function closeMenus() {
+  for (const m of document.querySelectorAll('.menu')) m.hidden = true;
+  for (const b of document.querySelectorAll('[aria-haspopup]')) b.setAttribute('aria-expanded', 'false');
+}
+
+function toggleMenu(btn, menu) {
+  const open = menu.hidden;
+  closeMenus();
+  menu.hidden = !open;
+  btn.setAttribute('aria-expanded', String(open));
+}
+
+const narrow = window.matchMedia('(max-width: 820px)');
+function applySplit(frac) {
+  frac = Math.min(0.85, Math.max(0.15, frac));
+  const a = Math.round(frac * 1000), b = 1000 - a;
+  const layout = $('#layout');
+  if (narrow.matches) {
+    layout.style.gridTemplateColumns = '';
+    layout.style.gridTemplateRows = `minmax(0, ${a}fr) 6px minmax(0, ${b}fr)`;
+  } else {
+    layout.style.gridTemplateRows = '';
+    layout.style.gridTemplateColumns = `minmax(0, ${a}fr) 6px minmax(0, ${b}fr)`;
+  }
+  cm?.refresh();
+  return frac;
+}
+
+function restoreSplit() {
+  const key = () => (narrow.matches ? 'pyide:split-v' : 'pyide:split-h');
+  const load = () => {
+    const v = parseFloat(localStorage.getItem(key()) || '');
+    if (v) applySplit(v);
+    else { $('#layout').style.gridTemplateColumns = ''; $('#layout').style.gridTemplateRows = ''; cm?.refresh(); }
+  };
+  load();
+  narrow.addEventListener('change', load);
+  const splitter = $('#splitter');
+  splitter.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    splitter.setPointerCapture(e.pointerId);
+    splitter.classList.add('dragging');
+    const rect = $('#layout').getBoundingClientRect();
+    let frac = 0.5;
+    const move = (ev) => {
+      frac = narrow.matches ? (ev.clientY - rect.top) / rect.height : (ev.clientX - rect.left) / rect.width;
+      frac = applySplit(frac);
+    };
+    const up = () => {
+      splitter.classList.remove('dragging');
+      splitter.removeEventListener('pointermove', move);
+      splitter.removeEventListener('pointerup', up);
+      try { localStorage.setItem(key(), String(frac)); } catch { /* ignore */ }
+    };
+    splitter.addEventListener('pointermove', move);
+    splitter.addEventListener('pointerup', up);
+  });
+  splitter.addEventListener('keydown', (e) => {
+    const cur = parseFloat(localStorage.getItem(key()) || '0.55');
+    const delta = { ArrowLeft: -0.03, ArrowUp: -0.03, ArrowRight: 0.03, ArrowDown: 0.03 }[e.key];
+    if (!delta) return;
+    e.preventDefault();
+    const f = applySplit(cur + delta);
+    try { localStorage.setItem(key(), String(f)); } catch { /* ignore */ }
+  });
+}
+
+function wireUi() {
+  $('#run-btn').addEventListener('click', runFile);
+  $('#stop-btn').addEventListener('click', stop);
+  $('#restart-btn').addEventListener('click', () => restart());
+  $('#share-btn').addEventListener('click', share);
+  $('#new-file-btn').addEventListener('click', newFile);
+  $('#download-file-btn').addEventListener('click', () => {
+    const path = project.active;
+    downloadBlob(docs.get(path).getValue(), path.split('/').pop(), 'text/plain;charset=utf-8');
+  });
+  $('#clear-btn').addEventListener('click', () => { term.clear(); focusRepl(); });
+  $('#examples-btn').addEventListener('click', (e) => { e.stopPropagation(); toggleMenu(e.currentTarget, $('#examples-menu')); });
+  $('#settings-btn').addEventListener('click', (e) => { e.stopPropagation(); toggleMenu(e.currentTarget, $('#settings-menu')); });
+  document.addEventListener('click', (e) => { if (!e.target.closest('.menu')) closeMenus(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMenus(); });
+
+  for (const tab of document.querySelectorAll('.ptab')) tab.addEventListener('click', () => showPanel(tab.dataset.panel));
+
+  // Settings
+  const theme = $('#set-theme'), font = $('#set-font');
+  theme.value = settings.theme;
+  font.value = String(settings.fontSize);
+  $('#set-autoinstall').checked = settings.autoInstall;
+  $('#set-clear').checked = settings.clearOnRun;
+  $('#set-wrap').checked = settings.wrap;
+  theme.addEventListener('change', () => { settings.theme = theme.value; saveSettings(); applySettings(); });
+  font.addEventListener('change', () => { settings.fontSize = +font.value; saveSettings(); applySettings(); });
+  $('#set-autoinstall').addEventListener('change', (e) => { settings.autoInstall = e.target.checked; saveSettings(); });
+  $('#set-clear').addEventListener('change', (e) => { settings.clearOnRun = e.target.checked; saveSettings(); });
+  $('#set-wrap').addEventListener('change', (e) => { settings.wrap = e.target.checked; saveSettings(); applySettings(); });
+  $('#shortcuts-btn').addEventListener('click', () => { closeMenus(); $('#shortcuts-dialog').showModal(); });
+  $('#reset-project').addEventListener('click', async () => {
+    if (!confirm('Delete all files in this project and start over? This cannot be undone.')) return;
+    await store.set('project', null);
+    location.reload();
+  });
+
+  // Console input
+  const ta = $('#repl');
+  ta.addEventListener('input', autosizeRepl);
+  ta.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      return; // handled globally: run the current file
+    } else if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (ui.busy || !py.ready) return;
+      const text = ta.value;
+      ta.value = '';
+      autosizeRepl();
+      replExecute(text);
+    } else if (e.key === 'ArrowUp' && !ta.value.slice(0, ta.selectionStart).includes('\n')) {
+      if (histPos === 0) return;
+      e.preventDefault();
+      if (histPos === replHistory.length) histDraft = ta.value;
+      ta.value = replHistory[--histPos];
+      autosizeRepl();
+    } else if (e.key === 'ArrowDown' && !ta.value.slice(ta.selectionEnd).includes('\n')) {
+      if (histPos >= replHistory.length) return;
+      e.preventDefault();
+      ta.value = ++histPos === replHistory.length ? histDraft : replHistory[histPos];
+      autosizeRepl();
+    } else if (e.key === 'Tab') {
+      e.preventDefault();
+      const before = ta.value.slice(0, ta.selectionStart);
+      const lineBefore = before.split('\n').pop();
+      if (!lineBefore.trim()) ta.setRangeText('    ', ta.selectionStart, ta.selectionEnd, 'end');
+      else replComplete();
+    } else if ((e.key === 'c' || e.key === 'C') && e.ctrlKey && ta.selectionStart === ta.selectionEnd) {
+      e.preventDefault();
+      term.echo(ui.continuation ? '...' : '>>>', ta.value + '^C');
+      term.write('KeyboardInterrupt\n', 'stderr');
+      ta.value = '';
+      ui.continuation = false;
+      setPrompt();
+      if (py.ready) py.call('replReset').catch(() => {});
+    } else if ((e.key === 'l' || e.key === 'L') && e.ctrlKey) {
+      e.preventDefault();
+      term.clear();
+    }
+  });
+  ta.addEventListener('paste', () => setTimeout(autosizeRepl, 0));
+
+  // Global shortcuts
+  document.addEventListener('keydown', (e) => {
+    const mod = e.ctrlKey || e.metaKey;
+    if (mod && e.key === 'Enter' && !e.target.closest('.CodeMirror')) { e.preventDefault(); runFile(); }
+    if (e.ctrlKey && (e.key === 'c' || e.key === 'C') && ui.busy && !window.getSelection().toString() && !e.target.matches('input, textarea')) {
+      e.preventDefault();
+      stop();
+    }
+    if (mod && (e.key === 's' || e.key === 'S') && !e.target.closest('.CodeMirror')) {
+      e.preventDefault();
+      saveProject().then(() => toast('Saved in this browser'));
+    }
+  });
+
+  // Clicking the console focuses the input (unless selecting text); clicking a
+  // traceback line jumps to it in the editor.
+  $('#panel-console').addEventListener('click', (e) => {
+    if (window.getSelection().toString()) return;
+    const ln = e.target.closest('.ln');
+    if (ln) {
+      const m = ln.textContent.match(/File "\/home\/pyodide\/([^"]+)", line (\d+)/);
+      if (m && docs.has(m[1])) { jumpTo(m[1], +m[2]); return; }
+    }
+    if (e.target.closest('iframe, img, a')) return;
+    if (stdinField) stdinField.focus();
+    else focusRepl(true);
+  });
+
+  // Files panel
+  $('#upload-input').addEventListener('change', (e) => { uploadFiles(e.target.files); e.target.value = ''; });
+  $('#refresh-files').addEventListener('click', refreshFiles);
+  $('#zip-btn').addEventListener('click', async () => {
+    if (!py.ready) return;
+    try {
+      await syncFiles();
+      downloadBlob(await py.call('zip'), 'python-project.zip', 'application/zip');
+    } catch (err) { toast('Could not create zip: ' + err.message); }
+  });
+  if (window.showDirectoryPicker) {
+    const mb = $('#mount-btn');
+    mb.hidden = false;
+    mb.addEventListener('click', async () => {
+      if (!py.ready) return;
+      try {
+        const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
+        const point = await py.call('mount', { handle });
+        term.system(`Mounted your folder "${handle.name}" at ${point} — changes made by Python are written back after each run.`);
+        toast(`Mounted at ${point}`);
+      } catch (err) {
+        if (err.name !== 'AbortError') toast('Mount failed: ' + err.message);
+      }
+    });
+  }
+
+  // Packages panel
+  $('#pip-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const names = $('#pip-input').value.split(/[\s,]+/).filter(Boolean);
+    $('#pip-input').value = '';
+    installPackages(names);
+  });
+  $('#pkg-filter').addEventListener('input', refreshPackages);
+  $('#avail-filter').addEventListener('input', () => renderPkgList($('#avail-list'), lockPackages || [], $('#avail-filter').value, true));
+
+  // Drag and drop files anywhere
+  let dragDepth = 0;
+  window.addEventListener('dragenter', (e) => {
+    if (![...(e.dataTransfer?.types || [])].includes('Files')) return;
+    dragDepth++;
+    document.body.classList.add('drop-target');
+  });
+  window.addEventListener('dragleave', () => { if (--dragDepth <= 0) { dragDepth = 0; document.body.classList.remove('drop-target'); } });
+  window.addEventListener('dragover', (e) => e.preventDefault());
+  window.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dragDepth = 0;
+    document.body.classList.remove('drop-target');
+    if (e.dataTransfer?.files?.length) uploadFiles(e.dataTransfer.files);
+  });
+
+  // Save on leave
+  document.addEventListener('visibilitychange', () => { if (document.hidden) saveProject(); });
+  window.addEventListener('pagehide', () => saveProject());
+}
+
+main().catch((err) => {
+  console.error(err);
+  document.body.insertAdjacentHTML('beforeend', `<pre style="position:fixed;bottom:30px;left:16px;right:16px;color:#c62828;background:#fff;padding:12px;border-radius:8px;z-index:999;white-space:pre-wrap">Startup error: ${String(err && err.stack || err).replace(/</g, '&lt;')}</pre>`);
+});
+</script>
 </body>
 </html>

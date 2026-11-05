@@ -4,7 +4,13 @@ A Python IDE where the real CPython 3.13 interpreter runs **entirely inside your
 
 ## Use it
 
-Open the published page (see *Hosting* below), e.g. `https://<user>.github.io/friendly-spoon/`. The first visit downloads about 10 MB; after that it is cached.
+Everything is in **one file, `index.html`** (about 130 KB). Use it in any of these ways:
+
+- **Open it directly**: download `index.html` and double-click it. No server is needed.
+- **Host it** anywhere static files can live, such as GitHub Pages (see *Hosting* below).
+- Optionally, put `coi-sw.js` next to it on the web host. This enables full Ctrl+C support (see below).
+
+The page fetches Python itself (Pyodide, about 10 MB, cached after the first visit) and the code editor from public CDNs, so it needs an internet connection.
 
 ## Features
 
@@ -17,7 +23,7 @@ Open the published page (see *Hosting* below), e.g. `https://<user>.github.io/fr
   - it shares the namespace of the last run (like `python -i`)
   - Shift+Enter in the editor sends the selection or current line to the console
 - **`input()` works**: the program pauses and an input field appears inline in the console.
-- **Stop / Ctrl+C** raises `KeyboardInterrupt` in running code, including infinite loops, `time.sleep` and `input()`. If Python doesn't respond, Force stop restarts it.
+- **Stop / Ctrl+C** raises `KeyboardInterrupt` in running code, including `time.sleep`, `input()` and async code. Infinite loops can be interrupted too when hosted with `coi-sw.js` (see below); otherwise Force stop restarts Python.
 - **Rich output**:
   - matplotlib plots render inline
   - pandas DataFrames render as HTML tables
@@ -43,7 +49,16 @@ The IDE is just static files, so any static web host works. With **GitHub Pages*
 
 Pages on a private repository needs a paid GitHub plan; on a public repository it is free.
 
-Blocking `input()` and interrupting code rely on `SharedArrayBuffer`, which browsers enable only for *cross-origin isolated* pages. GitHub Pages cannot set the required headers, so the small service worker in `coi-sw.js` adds them; the page reloads itself once on the first visit to switch this on. If isolation is unavailable (for example when opening `index.html` straight from disk), the status bar shows "limited mode". Everything else still works, but `input()` raises an error and Stop has to restart Python.
+### `input()` and the Stop button
+
+Python runs in a background Web Worker, so pausing it for `input()` takes some help from the browser. There are two mechanisms:
+
+| Setup | `input()` | Stop / Ctrl+C |
+| --- | --- | --- |
+| Hosted with `coi-sw.js` alongside (cross-origin isolated) | ✓ | ✓ everywhere, including busy loops |
+| `index.html` alone: local file or any host (uses WebAssembly JSPI, available in current Chrome/Edge) | ✓ | ✓ during `input()`, `time.sleep()` and `await`; busy loops need **Force stop**, which restarts Python |
+
+The status bar shows which mode is active. `coi-sw.js` is a tiny service worker that adds the COOP/COEP headers static hosts can't send; the page reloads itself once on the first visit to switch it on.
 
 ### Self-hosting Pyodide
 
@@ -53,14 +68,8 @@ By default Pyodide loads from the jsDelivr CDN. To use another copy, add `?pyodi
 
 | Path | Purpose |
 | --- | --- |
-| `index.html`, `css/style.css` | Page layout and theme |
-| `js/app.js` | Editor, console, panels, persistence and sharing |
-| `js/terminal.js` | Console renderer (ANSI colours, `\r`, images, HTML) |
-| `js/worker.js` | Web Worker hosting Pyodide, plus stdin/interrupt plumbing |
-| `py/ide.py` | Python-side runtime: run/REPL, display, input, pip, completion |
-| `py/ide_mpl.py` | Matplotlib backend that renders figures inline |
-| `coi-sw.js` | Service worker that enables cross-origin isolation |
-| `js/examples.js` | Example programs |
+| `index.html` | The whole IDE: styles, UI code, console renderer, and embedded `<script type="text/plain">` blocks holding the Web Worker (`#worker-src`) and the Python runtime (`#py-ide`, `#py-ide-mpl`) |
+| `coi-sw.js` | Optional service worker that enables cross-origin isolation when hosted |
 
 ## Limitations
 
