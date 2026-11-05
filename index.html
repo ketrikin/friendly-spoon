@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Browser Python IDE</title>
+  <meta name="description" content="A full CPython 3 interpreter and IDE that runs entirely in your browser (Pyodide / WebAssembly).">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%233b82f6'/%3E%3Ctext x='16' y='22' font-family='monospace' font-size='15' font-weight='700' text-anchor='middle' fill='white'%3E&gt;_%3C/text%3E%3C/svg%3E">
+  <script>
+    // Apply the saved theme before first paint.
+    try {
+      const t = JSON.parse(localStorage.getItem('pyide:settings') || '{}').theme;
+      if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+    } catch {}
+  </script>
+  <link rel="stylesheet" crossorigin="anonymous" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+  <link rel="stylesheet" crossorigin="anonymous" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.css">
+  <link rel="stylesheet" crossorigin="anonymous" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/dialog/dialog.min.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand" title="CPython compiled to WebAssembly, running in this tab">
+      <span class="logo" aria-hidden="true">&gt;_</span>
+      <span class="brand-name">Browser Python</span>
+    </div>
+    <div class="actions">
+      <button id="run-btn" class="btn primary" title="Run the current file (Ctrl/⌘+Enter)" disabled>
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg><span>Run</span>
+      </button>
+      <button id="stop-btn" class="btn" title="Interrupt (Ctrl+C in the console)" disabled>
+        <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3.5" y="3.5" width="9" height="9" rx="1"/></svg><span>Stop</span>
+      </button>
+      <button id="restart-btn" class="btn" title="Restart the Python interpreter (clears all state)">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13 8a5 5 0 1 1-1.5-3.6M13 2.5v3h-3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Restart</span>
+      </button>
+      <span class="sep"></span>
+      <div class="menu-wrap">
+        <button id="examples-btn" class="btn" aria-haspopup="true" aria-expanded="false">Examples <span class="caret">▾</span></button>
+        <div id="examples-menu" class="menu" role="menu" hidden></div>
+      </div>
+      <button id="share-btn" class="btn" title="Copy a link that contains your code">Share</button>
+      <div class="menu-wrap">
+        <button id="settings-btn" class="btn icon-only" title="Settings" aria-haspopup="true" aria-expanded="false">
+          <svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2.5 4.5h11M2.5 11.5h11"/><circle cx="10.5" cy="4.5" r="1.8" fill="var(--surface-2)"/><circle cx="5.5" cy="11.5" r="1.8" fill="var(--surface-2)"/></svg>
+        </button>
+        <div id="settings-menu" class="menu settings" hidden>
+          <label class="row"><span>Theme</span>
+            <select id="set-theme"><option value="auto">System</option><option value="light">Light</option><option value="dark">Dark</option></select>
+          </label>
+          <label class="row"><span>Font size</span>
+            <select id="set-font"><option>12</option><option>13</option><option>14</option><option>15</option><option>16</option><option>18</option><option>20</option></select>
+          </label>
+          <label class="row check"><input type="checkbox" id="set-autoinstall"> <span>Auto-install imported packages</span></label>
+          <label class="row check"><input type="checkbox" id="set-clear"> <span>Clear console before each run</span></label>
+          <label class="row check"><input type="checkbox" id="set-wrap"> <span>Wrap long lines in editor</span></label>
+          <div class="menu-foot">
+            <button id="reset-project" class="btn small danger">Reset project…</button>
+            <button id="shortcuts-btn" class="btn small">Shortcuts</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="layout" id="layout">
+    <section class="pane editor-pane" aria-label="Editor">
+      <div class="tabbar">
+        <div id="tabs" class="tabs" role="tablist"></div>
+        <button id="new-file-btn" class="tab-add" title="New file">+</button>
+        <button id="download-file-btn" class="tab-tool" title="Download this file">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v8m0 0L5 7m3 3 3-3M3 13h10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+      <div id="editor" class="editor"></div>
+    </section>
+
+    <div id="splitter" class="splitter" role="separator" aria-orientation="vertical" tabindex="0" title="Drag to resize"></div>
+
+    <section class="pane side-pane" aria-label="Output">
+      <div class="ptabs" role="tablist">
+        <button class="ptab active" data-panel="console" role="tab">Console</button>
+        <button class="ptab" data-panel="files" role="tab">Files</button>
+        <button class="ptab" data-panel="packages" role="tab">Packages</button>
+        <span class="grow"></span>
+        <button id="clear-btn" class="btn small ghost" title="Clear console (Ctrl+L)">Clear</button>
+      </div>
+
+      <div id="panel-console" class="panel console" tabindex="-1">
+        <div id="output" class="output" aria-live="polite"></div>
+        <div id="prompt-row" class="prompt-row" hidden>
+          <span id="ps" class="ps">&gt;&gt;&gt;</span>
+          <textarea id="repl" rows="1" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="Python console input"></textarea>
+        </div>
+      </div>
+
+      <div id="panel-files" class="panel files" hidden>
+        <div class="panel-tools">
+          <label class="btn small">Upload<input id="upload-input" type="file" multiple hidden></label>
+          <button id="mount-btn" class="btn small" hidden title="Mount a folder from your computer (Chrome/Edge)">Mount folder</button>
+          <button id="zip-btn" class="btn small">Download .zip</button>
+          <span class="grow"></span>
+          <button id="refresh-files" class="btn small ghost">Refresh</button>
+        </div>
+        <p class="hint">The Python filesystem at <code>/home/pyodide</code> (the working directory). Files you upload or open in the editor are saved in this browser; files your programs create live until you restart.</p>
+        <ul id="file-list" class="file-list"></ul>
+      </div>
+
+      <div id="panel-packages" class="panel packages" hidden>
+        <form id="pip-form" class="pip-form">
+          <input id="pip-input" placeholder="Package names, e.g. requests rich" spellcheck="false" autocomplete="off">
+          <button class="btn small primary">pip install</button>
+        </form>
+        <p class="hint">Installs from Pyodide's prebuilt packages (numpy, pandas, scipy, matplotlib, scikit-learn…) or pure-Python wheels from PyPI.</p>
+        <h3>Installed <span id="pkg-count" class="muted"></span></h3>
+        <input id="pkg-filter" class="filter" placeholder="Filter…" spellcheck="false">
+        <ul id="pkg-list" class="pkg-list"></ul>
+        <h3>Available prebuilt <span id="avail-count" class="muted"></span></h3>
+        <input id="avail-filter" class="filter" placeholder="Search Pyodide packages…" spellcheck="false">
+        <ul id="avail-list" class="pkg-list"></ul>
+      </div>
+    </section>
+  </main>
+
+  <footer class="statusbar">
+    <span id="st-state" class="st-state"><i class="dot"></i><span>Loading Python…</span></span>
+    <span id="st-iso" class="st-iso"></span>
+    <span class="grow"></span>
+    <span id="st-cursor"></span>
+    <span id="st-version"></span>
+  </footer>
+
+  <div id="toast" class="toast" role="status" hidden></div>
+
+  <dialog id="shortcuts-dialog" class="dialog">
+    <h2>Keyboard shortcuts</h2>
+    <table>
+      <tr><td><kbd>Ctrl/⌘</kbd>+<kbd>Enter</kbd></td><td>Run current file</td></tr>
+      <tr><td><kbd>Shift</kbd>+<kbd>Enter</kbd></td><td>Run selection / current line in console</td></tr>
+      <tr><td><kbd>Ctrl</kbd>+<kbd>Space</kbd></td><td>Autocomplete</td></tr>
+      <tr><td><kbd>Ctrl/⌘</kbd>+<kbd>/</kbd></td><td>Toggle comment</td></tr>
+      <tr><td><kbd>Ctrl/⌘</kbd>+<kbd>D</kbd></td><td>Select next occurrence</td></tr>
+      <tr><td><kbd>Ctrl/⌘</kbd>+<kbd>F</kbd> / <kbd>Alt</kbd>+<kbd>G</kbd></td><td>Find / jump to line</td></tr>
+      <tr><td><kbd>Ctrl/⌘</kbd>+<kbd>S</kbd></td><td>Save (also autosaves)</td></tr>
+      <tr><td><kbd>Ctrl</kbd>+<kbd>C</kbd></td><td>Interrupt (in console)</td></tr>
+      <tr><td><kbd>Ctrl</kbd>+<kbd>L</kbd></td><td>Clear console</td></tr>
+      <tr><td><kbd>↑</kbd> / <kbd>↓</kbd></td><td>Console history</td></tr>
+      <tr><td><kbd>Tab</kbd></td><td>Complete in console</td></tr>
+    </table>
+    <form method="dialog"><button class="btn">Close</button></form>
+  </dialog>
+
+  <script crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+  <script crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
+  <script crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
+  <script crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.min.js"></script>
+  <script crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/selection/active-line.min.js"></script>
+  <script crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/comment/comment.min.js"></script>
+  <script crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.js"></script>
+  <script crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/dialog/dialog.min.js"></script>
+  <script crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/search/searchcursor.min.js"></script>
+  <script crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/search/search.min.js"></script>
+  <script crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/search/jump-to-line.min.js"></script>
+  <script crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/keymap/sublime.min.js"></script>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
