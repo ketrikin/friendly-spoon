@@ -23,6 +23,20 @@ Everything is listed in the **command palette** (Ctrl/⌘+Shift+P or F1), and **
 - **`input()`** pauses the program and shows an input field inline in the console.
 - **Stop / Ctrl+C** raises `KeyboardInterrupt`, including during `time.sleep`, `input()` and async code. Infinite loops can also be interrupted when hosted with `coi-sw.js`; otherwise Force stop restarts Python.
 
+**Notebooks (.ipynb)**
+- Create one with **+ → Notebook**, open the *Notebook tour* example, or upload/drag in any Jupyter notebook. Files are standard nbformat 4.5, so they open in Jupyter, VS Code or Colab, and outputs are saved inside them.
+- Code and markdown cells, with outputs inline under each cell: text, tables, plots, images, `input()` prompts and tracebacks.
+- Markdown cells render headings, lists, tables, code and math (`$…$`, `$$…$$`, via KaTeX). sympy results and `display(Latex(...))` are typeset too.
+- Cells share one Python session with each other and with the console.
+- Jupyter keys:
+  - Shift+Enter runs a cell and moves on; Ctrl/⌘+Enter runs it in place; Alt+Enter runs it and inserts a cell below.
+  - Esc leaves the editor (command mode). Then A/B insert a cell, M/Y switch markdown/code, D D deletes, Z undoes a delete, I I interrupts and 0 0 restarts and runs all.
+- **Run all** stops at the first error. Also available: run above/below, restart & run all, clear outputs, move cells, and format all cells with Black.
+- IPython syntax in cells:
+  - line magics (`%timeit`, `%pip install …`, `!pip install …`, `%matplotlib inline`, …)
+  - cell magics (`%%writefile`, `%%time`, `%%timeit`, `%%capture`, `%%html`, `%%markdown`, `%%latex`)
+- Export a notebook as a `# %%` Python script, or convert such a script into a notebook (command palette). Share links include notebooks without their outputs.
+
 **Debugger**
 - Click left of a line number (or press F9) to set a breakpoint, then press **F5**. With no breakpoints, it pauses on the first line.
 - Step over, into and out (F10 / F11 / Shift+F11), continue and stop.
@@ -88,7 +102,7 @@ By default Pyodide loads from the jsDelivr CDN. To use another copy, add `?pyodi
 
 | Path | Purpose |
 | --- | --- |
-| `index.html` | The whole IDE. Besides the styles and UI script, it embeds `<script type="text/plain">` blocks: the Web Worker (`#worker-src`) and the Python modules written into Pyodide at startup (`ide.py` runtime, `ide_tools.py` debugger/lint/format/intel/tests/magics, `ide_mpl.py` matplotlib backend, `turtle.py`) |
+| `index.html` | The whole IDE. Besides the styles and UI script, it embeds `<script type="text/plain">` blocks: the Web Worker (`#worker-src`) and the Python modules written into Pyodide at startup (`ide.py` runtime, `ide_tools.py` debugger/lint/format/intel/tests/magics, `ide_mpl.py` matplotlib backend, `turtle.py`). Markdown/math rendering for notebooks (marked, DOMPurify, KaTeX) loads from cdnjs the first time it is needed |
 | `coi-sw.js` | Optional service worker that enables cross-origin isolation when hosted |
 
 Black, pyflakes and pytest are fetched on first use (from PyPI or Pyodide's CDN), so the first lint or format takes a few seconds longer.

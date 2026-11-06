@@ -525,6 +525,71 @@ ul.outline li { display: flex; align-items: center; gap: 8px; padding: 4px 8px; 
   #share-btn { display: none; }
   .actions .btn { padding: 0 9px; }
 }
+
+/* ---------- notebooks ---------- */
+.new-wrap { display: flex; }
+.menu.new-menu { left: 0; right: auto; top: 100%; min-width: 260px; }
+.menu.new-menu small { display: inline; margin-left: 6px; }
+.notebook { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; background: var(--surface); }
+.nb-toolbar { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; padding: 5px 8px; border-bottom: 1px solid var(--border); background: var(--surface); }
+.nb-toolbar select { height: 26px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface-2); padding: 0 6px; font-size: 12.5px; }
+.nb-sep { width: 1px; height: 18px; background: var(--border); margin: 0 4px; }
+.nb-status { font-size: 12px; color: var(--muted); white-space: nowrap; }
+.nb-status.busy { color: var(--warn); }
+.nb-cells { flex: 1; min-height: 0; overflow: auto; padding: 10px 12px 40vh 4px; outline: none; }
+.nb-cell { display: grid; grid-template-columns: 64px minmax(0, 1fr); position: relative; padding: 4px 0; border-left: 3px solid transparent; border-radius: 2px; }
+.nb-cell.selected { border-left-color: color-mix(in srgb, var(--accent) 55%, transparent); background: color-mix(in srgb, var(--accent) 4%, transparent); }
+.nb-cells:focus .nb-cell.selected { border-left-color: var(--accent); }
+.nb-cell.editing { border-left-color: var(--ok); }
+.nb-gutter { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; padding: 6px 8px 0 0; }
+.nb-prompt { font: 12px var(--mono); color: var(--muted); white-space: nowrap; }
+.nb-run { border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 12px; padding: 2px 4px; border-radius: 4px; opacity: 0; }
+.nb-cell:hover .nb-run, .nb-cell.selected .nb-run { opacity: 1; }
+.nb-run:hover { color: var(--accent); background: var(--surface-2); }
+.nb-main { min-width: 0; }
+.nb-input { border: 1px solid var(--border); border-radius: 6px; background: var(--surface-2); overflow: hidden; }
+.nb-cell.editing .nb-input { border-color: var(--accent); }
+.nb-input .CodeMirror { height: auto; background: transparent; font-size: var(--font-size); }
+.nb-input .CodeMirror-scroll { min-height: 1.5em; }
+.nb-input .CodeMirror-lines { padding: 6px 0; }
+.nb-input.raw { background: var(--surface); border-style: dashed; }
+.nb-cell.markdown .nb-input { background: var(--surface); }
+.nb-md { padding: 2px 10px; min-height: 1.5em; cursor: default; }
+.nb-md.empty { color: var(--muted); font-style: italic; }
+.nb-output { font: var(--font-size)/1.45 var(--mono); padding: 0 4px; overflow-x: auto; }
+.nb-output:not(:empty) { padding: 6px 4px 2px; }
+.nb-output .ln { min-height: 1.45em; white-space: pre-wrap; overflow-wrap: anywhere; }
+.nb-output .stderr { color: var(--stderr); background: color-mix(in srgb, var(--err-line) 55%, transparent); }
+.nb-output .stdin { color: var(--stdin); }
+.nb-output .sys { color: var(--sys); font-style: italic; }
+.nb-output img.rich { display: block; max-width: 100%; height: auto; margin: 4px 0; background: #fff; border-radius: 4px; cursor: pointer; }
+.nb-output iframe.rich { display: block; width: 100%; border: 1px solid var(--border); border-radius: 6px; margin: 4px 0; background: #fff; }
+.nb-tools { position: absolute; top: -9px; right: 6px; box-shadow: var(--shadow); display: none; gap: 2px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1px; z-index: 5; }
+.nb-cell.selected .nb-tools, .nb-cell:hover .nb-tools { display: flex; }
+.nb-tools button { border: 0; background: none; cursor: pointer; color: var(--muted); font-size: 12px; padding: 2px 6px; border-radius: 4px; }
+.nb-tools button:hover { background: var(--surface-2); color: var(--text); }
+
+/* rendered markdown (notebook cells and text/markdown outputs) */
+.md { font: 14.5px/1.6 var(--sans); color: var(--text); overflow-wrap: anywhere; }
+.md > :first-child { margin-top: 4px; } .md > :last-child { margin-bottom: 4px; }
+.md h1 { font-size: 1.6em; margin: .6em 0 .4em; } .md h2 { font-size: 1.3em; margin: .7em 0 .35em; } .md h3 { font-size: 1.12em; margin: .7em 0 .3em; }
+.md h1, .md h2 { border-bottom: 1px solid var(--border); padding-bottom: .2em; }
+.md p, .md ul, .md ol, .md blockquote, .md table, .md pre { margin: .5em 0; }
+.md code { font: .9em var(--mono); background: var(--surface-2); padding: .1em .35em; border-radius: 4px; }
+.md pre { background: var(--surface-2); padding: 8px 10px; border-radius: 6px; overflow: auto; }
+.md pre code { background: none; padding: 0; }
+.md blockquote { border-left: 3px solid var(--border); padding-left: 12px; color: var(--muted); }
+.md table { border-collapse: collapse; } .md th, .md td { border: 1px solid var(--border); padding: 4px 10px; }
+.md img { max-width: 100%; }
+.md a { color: var(--accent); }
+.md hr { border: 0; border-top: 1px solid var(--border); }
+.output .rich-text, .nb-output .rich-text { white-space: normal; margin: 4px 0; }
+.katex { font-size: 1.08em; }
+.katex-display { margin: .6em 0; overflow-x: auto; overflow-y: hidden; }
+@media (max-width: 820px) {
+  .nb-cell { grid-template-columns: 40px minmax(0, 1fr); }
+  .nb-toolbar .ghost { display: none; }
+}
 </style>
 </head>
 <body>
@@ -596,7 +661,14 @@ ul.outline li { display: flex; align-items: center; gap: 8px; padding: 4px 8px; 
     <section class="pane editor-pane" aria-label="Editor">
       <div class="tabbar">
         <div id="tabs" class="tabs" role="tablist"></div>
-        <button id="new-file-btn" class="tab-add" title="New file">+</button>
+        <div class="menu-wrap new-wrap">
+          <button id="new-file-btn" class="tab-add" title="New file or notebook" aria-haspopup="true" aria-expanded="false">+</button>
+          <div id="new-menu" class="menu new-menu" role="menu" hidden>
+            <button class="item" data-new="py">Python file <small>.py</small></button>
+            <button class="item" data-new="nb">Notebook <small>.ipynb — cells with inline output</small></button>
+            <button class="item" data-new="txt">Text / Markdown file <small>.md</small></button>
+          </div>
+        </div>
         <button id="download-file-btn" class="tab-tool" title="Download this file">
           <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v8m0 0L5 7m3 3 3-3M3 13h10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
@@ -610,6 +682,26 @@ ul.outline li { display: flex; align-items: center; gap: 8px; padding: 4px 8px; 
         <button class="btn small danger" id="debug-stop" title="Stop (Shift+F5)">■ Stop</button>
       </div>
       <div id="editor" class="editor"></div>
+      <div id="notebook" class="notebook" hidden>
+        <div id="nb-toolbar" class="nb-toolbar">
+          <button class="btn small" data-nb="add-code" title="Insert code cell below (B)">+ Code</button>
+          <button class="btn small" data-nb="add-md" title="Insert markdown cell below">+ Markdown</button>
+          <span class="nb-sep"></span>
+          <button class="btn small" data-nb="run" title="Run cell and select below (Shift+Enter)">▶ Run</button>
+          <button class="btn small" data-nb="run-all" title="Run all cells">▶▶ Run all</button>
+          <button class="btn small" data-nb="stop" title="Interrupt (I, I)">■</button>
+          <button class="btn small" data-nb="restart" title="Restart Python and run all (0, 0)">⟳ Restart &amp; run all</button>
+          <button class="btn small ghost" data-nb="clear" title="Clear all outputs">Clear outputs</button>
+          <span class="nb-sep"></span>
+          <button class="btn small ghost" data-nb="up" title="Move cell up">↑</button>
+          <button class="btn small ghost" data-nb="down" title="Move cell down">↓</button>
+          <button class="btn small ghost" data-nb="del" title="Delete cell (D, D)">🗑</button>
+          <select id="nb-type" title="Cell type (Y / M / R)"><option value="code">Code</option><option value="markdown">Markdown</option><option value="raw">Raw</option></select>
+          <span class="grow"></span>
+          <span id="nb-status" class="nb-status"></span>
+        </div>
+        <div id="nb-cells" class="nb-cells" tabindex="0" aria-label="Notebook cells"></div>
+      </div>
     </section>
 
     <div id="splitter" class="splitter" role="separator" aria-orientation="vertical" tabindex="0" title="Drag to resize"></div>
@@ -759,6 +851,10 @@ ul.outline li { display: flex; align-items: center; gap: 8px; padding: 4px 8px; 
       <tr><td><kbd>Alt</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd></td><td>Move line</td></tr>
       <tr><td><kbd>Ctrl/⌘</kbd>+<kbd>S</kbd></td><td>Save (also autosaves)</td></tr>
       <tr><td><kbd>Ctrl/⌘</kbd>+<kbd>=</kbd>/<kbd>-</kbd></td><td>Font size</td></tr>
+      <tr><th colspan="2">Notebook</th></tr>
+      <tr><td><kbd>Shift</kbd>+<kbd>Enter</kbd> / <kbd>Ctrl</kbd>+<kbd>Enter</kbd></td><td>Run cell (and advance) / in place</td></tr>
+      <tr><td><kbd>Esc</kbd> then <kbd>A</kbd>/<kbd>B</kbd></td><td>Insert cell above / below</td></tr>
+      <tr><td><kbd>M</kbd> / <kbd>Y</kbd>, <kbd>D</kbd> <kbd>D</kbd>, <kbd>Z</kbd></td><td>Markdown / code, delete, undo</td></tr>
       <tr><th colspan="2">Console</th></tr>
       <tr><td><kbd>↑</kbd> / <kbd>↓</kbd>, <kbd>Tab</kbd></td><td>History, completion</td></tr>
       <tr><td><kbd>Ctrl</kbd>+<kbd>L</kbd></td><td>Clear</td></tr>
@@ -770,6 +866,7 @@ ul.outline li { display: flex; align-items: center; gap: 8px; padding: 4px 8px; 
 
   <script crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
   <script crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
+  <script crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/markdown/markdown.min.js"></script>
   <script crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
   <script crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.min.js"></script>
   <script crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/selection/active-line.min.js"></script>
@@ -1139,7 +1236,7 @@ import _ide_js
 HOME = "/home/pyodide"
 _TLA = ast.PyCF_ALLOW_TOP_LEVEL_AWAIT
 
-__all__ = ["display", "HTML", "SVG", "Image"]
+__all__ = ["display", "HTML", "SVG", "Image", "Markdown", "Latex", "Math"]
 
 # --------------------------------------------------------------------------
 # Rich display
@@ -1209,6 +1306,8 @@ _RICH = (
     ("_repr_svg_", "image/svg+xml"),
     ("_repr_png_", "image/png"),
     ("_repr_jpeg_", "image/jpeg"),
+    ("_repr_latex_", "text/latex"),
+    ("_repr_markdown_", "text/markdown"),
 )
 
 
@@ -1268,6 +1367,35 @@ class HTML:
         return f"<HTML {len(self.data)} chars>"
 
 
+class Markdown:
+    """Wrap Markdown text so that ``display()`` renders it."""
+
+    def __init__(self, text):
+        self.data = str(text)
+
+    def _repr_markdown_(self):
+        return self.data
+
+    def __repr__(self):
+        return f"<Markdown {len(self.data)} chars>"
+
+
+class Latex:
+    """Wrap a LaTeX formula so that ``display()`` typesets it."""
+
+    def __init__(self, text):
+        self.data = str(text)
+
+    def _repr_latex_(self):
+        return self.data
+
+    def __repr__(self):
+        return f"<Latex {self.data!r}>"
+
+
+Math = Latex
+
+
 class SVG:
     """Wrap SVG markup so that ``display()`` renders it."""
 
@@ -1311,8 +1439,30 @@ def _displayhook(value):
     if value is None:
         return
     builtins._ = None
-    _display_one(value)
+    if _has_rich_repr(value):
+        _display_one(value)
+    else:
+        try:
+            text = repr(value)
+        except Exception as e:
+            text = f"<repr failed: {type(e).__name__}: {e}>"
+        _emit("text/plain", text, {"result": True})
     builtins._ = value
+
+
+def _has_rich_repr(obj):
+    fig_mod = sys.modules.get("matplotlib.figure")
+    if fig_mod is not None and isinstance(obj, fig_mod.Figure):
+        return True
+    if inspect.isclass(obj) or isinstance(obj, types.ModuleType):
+        return False
+    for attr, _ in _RICH:
+        try:
+            if callable(getattr(obj, attr, None)):
+                return True
+        except Exception:
+            pass
+    return False
 
 
 # --------------------------------------------------------------------------
@@ -1464,6 +1614,8 @@ async def ensure_installed(sources):
         try:
             await micropip.install(pkg)
             importlib.invalidate_caches()
+            if not _module_available(name):
+                raise RuntimeError("the package did not download (are you offline?)")
             _status(f"Installed {pkg}")
         except Exception as e:
             _failed.add(name)
@@ -1494,6 +1646,12 @@ async def _pip(cmd, rest):
             _status(f"Installing {pkg}…")
             try:
                 await micropip.install(pkg)
+                importlib.invalidate_caches()
+                dist = re.split(r"[<>=!~\[;\s]", pkg, maxsplit=1)[0]
+                try:
+                    importlib.metadata.distribution(dist)
+                except importlib.metadata.PackageNotFoundError:
+                    raise RuntimeError("the package did not download (are you offline?)") from None
                 print(f"Successfully installed {pkg}")
             except Exception as e:
                 print(f"ERROR: could not install {pkg}: {e}", file=sys.stderr)
@@ -1770,12 +1928,39 @@ async def repl_push(line):
     return "complete"
 
 
+_LINE_MAGIC = re.compile(r"^([ \t]*)((?:%|!)[A-Za-z].*)$")
+
+
+def _transform_ipython(source):
+    """Turn IPython-style ``%magic`` / ``!pip`` lines into plain Python."""
+    out = []
+    for line in source.split("\n"):
+        m = _LINE_MAGIC.match(line)
+        if m and not m.group(2).startswith("%%"):
+            out.append(f"{m.group(1)}await __import__('ide_tools').line_magic({m.group(2)!r})")
+        else:
+            out.append(line)
+    return "\n".join(out)
+
+
 async def repl_cell(source):
-    """Run a multi-line block (like a notebook cell); show the last expression."""
+    """Run a multi-line block (like a notebook cell); show the last expression.
+
+    Returns "complete", "error" (syntax error), "exception" or "interrupted".
+    """
     source = str(source)
     _buffer.clear()
     if not source.strip():
         return "complete"
+    if source.lstrip().startswith("%%"):
+        import ide_tools
+
+        header, _, body = source.lstrip().partition("\n")
+        try:
+            return await ide_tools.cell_magic(header, body)
+        finally:
+            _flush_figures()
+            _flush()
     if "\n" not in source.strip():
         m = _PIP.match(source)
         if m:
@@ -1783,6 +1968,11 @@ async def repl_cell(source):
             return "complete"
         if _MAGIC.match(source):
             return await repl_push(source.strip())
+    if any(_LINE_MAGIC.match(line) for line in source.split("\n")):
+        try:
+            ast.parse(source)  # valid Python already: leave it alone
+        except SyntaxError:
+            source = _transform_ipython(source)
     name = _cell_name(source)
     try:
         tree = ast.parse(source, name, "exec")
@@ -1796,18 +1986,23 @@ async def repl_cell(source):
         sys.stderr.write("".join(traceback.format_exception_only(type(e), e)))
         return "error"
     await ensure_installed([source])
+    status = "complete"
     try:
         await _execute(body, _ns())
         if tail is not None:
             _displayhook(await _execute(tail, _ns()))
     except SystemExit as e:
         _handle_system_exit(e)
+    except KeyboardInterrupt as e:
+        _report_exception(e)
+        status = "interrupted"
     except BaseException as e:
         _report_exception(e)
+        status = "exception"
     finally:
         _flush_figures()
         _flush()
-    return "complete"
+    return status
 
 
 def repl_reset():
@@ -1933,6 +2128,7 @@ import shlex
 import sys
 import time
 import traceback
+import types
 
 import _ide_js
 import ide
@@ -2483,7 +2679,14 @@ async def magic(line):
         _help(line.rstrip("?").strip(), source=line.endswith("??"))
         return True
     if line.startswith("!"):
-        print("Shell commands are not available in the browser. Try %ls, %cd, %pip install ….", file=sys.stderr)
+        cmd = line[1:].strip()
+        word = cmd.split(" ", 1)[0]
+        if word in ("pip", "pip3"):
+            await ide.pip(cmd.partition(" ")[2])
+        elif word in ("ls", "pwd", "cd"):
+            return await magic("%" + cmd)
+        else:
+            print("Shell commands are not available in the browser. Try %ls, %cd, %pip install ….", file=sys.stderr)
         return True
     if not line.startswith("%"):
         return False
@@ -2549,12 +2752,82 @@ async def magic(line):
             print(f"{k}={v}")
     elif name in ("%clear", "%cls"):
         sys.stdout.write("\x1b[2J")
+    elif name == "%matplotlib":
+        pass  # plots are always shown inline
+    elif name in ("%load_ext", "%config", "%autoreload", "%reload_ext"):
+        print(f"{name} is not needed here (ignored)", file=sys.stderr)
     elif name in ("%magic", "%lsmagic", "%help"):
         for k, v in MAGICS.items():
             print(f"{k:<18} {v}")
     else:
         print(f"Unknown magic {name}. Type %lsmagic for the list.", file=sys.stderr)
     return True
+
+
+async def line_magic(line):
+    """Entry point for ``%magic`` / ``!cmd`` lines inside multi-line cells."""
+    if not await magic(line):
+        print(f"Unknown magic: {line}", file=sys.stderr)
+
+
+async def cell_magic(header, body):
+    """IPython-style cell magics (the first line of a cell starts with %%)."""
+    name, _, arg = header.strip().partition(" ")
+    arg = arg.strip()
+    ns = ide._ns()
+    if name == "%%writefile":
+        parts = shlex.split(arg)
+        append = "-a" in parts or "--append" in parts
+        target = [p for p in parts if not p.startswith("-")]
+        if not target:
+            print("usage: %%writefile [-a] filename", file=sys.stderr)
+            return "exception"
+        path = os.path.join(os.getcwd(), target[0])
+        os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+        existed = os.path.exists(path)
+        with open(path, "a" if append else "w", encoding="utf-8") as f:
+            f.write(body if body.endswith("\n") else body + "\n")
+        verb = "Appending to" if append else ("Overwriting" if existed else "Writing")
+        print(f"{verb} {target[0]}")
+        return "complete"
+    if name == "%%html":
+        ide._emit("text/html", body)
+        return "complete"
+    if name in ("%%markdown", "%%md"):
+        ide._emit("text/markdown", body)
+        return "complete"
+    if name in ("%%latex", "%%math"):
+        ide._emit("text/latex", body)
+        return "complete"
+    if name in ("%%svg",):
+        ide._emit("image/svg+xml", body)
+        return "complete"
+    if name == "%%time":
+        start, cpu = time.perf_counter(), time.process_time()
+        try:
+            return await ide.repl_cell(body)
+        finally:
+            print(f"Wall time: {_format_time(time.perf_counter() - start)}  (CPU: {_format_time(time.process_time() - cpu)})")
+    if name == "%%timeit":
+        import timeit
+
+        timer = timeit.Timer(body or "pass", setup=arg or "pass", globals=ns)
+        number, _ = timer.autorange()
+        runs = timer.repeat(repeat=5, number=number)
+        print(f"{_format_time(sum(runs) / len(runs) / number)} per loop (best {_format_time(min(runs) / number)}, 5 runs, {number:,} loops each)")
+        return "complete"
+    if name == "%%capture":
+        import contextlib
+        import io
+
+        buf_out, buf_err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(buf_out), contextlib.redirect_stderr(buf_err):
+            status = await ide.repl_cell(body)
+        if arg:
+            ns[arg.split()[0]] = types.SimpleNamespace(stdout=buf_out.getvalue(), stderr=buf_err.getvalue())
+        return status
+    print(f"Unsupported cell magic {name}. Supported: %%writefile, %%time, %%timeit, %%capture, %%html, %%markdown, %%latex, %%svg", file=sys.stderr)
+    return "exception"
 
 
 def _help(expr, source=False):
@@ -3522,6 +3795,12 @@ class Terminal {
   }
 
   renderRich({ mime, data, meta }) {
+    if (mime === 'text/plain') {
+      // Expression results (like the >>> prompt prints them).
+      this.breakLine();
+      this.renderText(String(data) + '\n', 'stdout');
+      return;
+    }
     this.breakLine();
     let el;
     if (mime === 'image/png' || mime === 'image/jpeg') {
@@ -3555,6 +3834,12 @@ class Terminal {
         } catch { /* ignore */ }
       };
       el.addEventListener('load', () => { fit(); setTimeout(fit, 150); this.scrollToEnd(this.stick); });
+    } else if (mime === 'text/markdown' || mime === 'text/latex') {
+      el = document.createElement('div');
+      el.className = 'md rich-text';
+      el.textContent = String(data);
+      const render = mime === 'text/markdown' ? renderMarkdownInto : renderLatexInto;
+      render(el, String(data)).then(() => this.scrollToEnd(this.stick));
     } else {
       el = document.createElement('div');
       el.textContent = String(data);
@@ -3811,6 +4096,24 @@ def test_deliberately_failing():
 `,
   },
   {
+    name: 'notebook_tour.ipynb',
+    title: 'Notebook tour (.ipynb)',
+    desc: 'Markdown, math, plots, tables',
+    cells: [
+      ['markdown', '# Notebook tour\n\nThis is a **Jupyter-compatible notebook** running entirely in your browser.\n\n- **Shift+Enter** runs a cell and moves to the next one\n- **Esc** leaves the editor; then **A**/**B** add cells, **M**/**Y** switch markdown/code, **D D** deletes\n- Cells share variables with each other *and* with the console\n\nMarkdown supports math too: $e^{i\\pi} + 1 = 0$ and\n\n$$\\int_0^1 x^2\\,dx = \\frac{1}{3}$$'],
+      ['code', 'import math\nradius = 3\narea = math.pi * radius ** 2\narea'],
+      ['markdown', '## Plots and tables\n\nOutputs are saved inside the notebook, just like in Jupyter.'],
+      ['code', 'import numpy as np\nimport matplotlib.pyplot as plt\n\nx = np.linspace(0, 2 * np.pi, 200)\nplt.figure(figsize=(6, 3))\nplt.plot(x, np.sin(x), label="sin")\nplt.plot(x, np.cos(x), label="cos")\nplt.legend()\nplt.show()'],
+      ['code', 'import pandas as pd\n\ndf = pd.DataFrame({"x": x[:5].round(3), "sin(x)": np.sin(x[:5]).round(3)})\ndf'],
+      ['markdown', '## Symbolic maths\n\n`sympy` results are typeset automatically.'],
+      ['code', 'import sympy as sp\n\nt = sp.symbols("t")\nsp.integrate(sp.exp(-t) * sp.sin(t), t)'],
+      ['markdown', '## Magics\n\nIPython-style `%` line magics and `%%` cell magics work.'],
+      ['code', '%timeit sum(i * i for i in range(1000))'],
+      ['code', '%%writefile greeting.py\ndef greet(name):\n    return f"Hello, {name}!"'],
+      ['code', 'from greeting import greet\ngreet(input("Your name: "))'],
+    ],
+  },
+  {
     name: 'cells.py',
     title: 'Code cells (# %%)',
     desc: 'Run notebook-style cells',
@@ -3864,7 +4167,7 @@ const params = new URLSearchParams(location.search);
 let INDEX_URL = params.get('pyodide') || `https://cdn.jsdelivr.net/pyodide/v${PYODIDE_VERSION}/full/`;
 if (!INDEX_URL.endsWith('/')) INDEX_URL += '/';
 
-const TEXT_EXT = /\.(py|pyi|txt|md|rst|json|csv|tsv|toml|ya?ml|ini|cfg|conf|html?|css|js|mjs|ts|xml|svg|sql|sh|log|env|gitignore|tex|r|c|h|cpp|java|rs|go)$/i;
+const TEXT_EXT = /\.(py|pyi|ipynb|txt|md|rst|json|csv|tsv|toml|ya?ml|ini|cfg|conf|html?|css|js|mjs|ts|xml|svg|sql|sh|log|env|gitignore|tex|r|c|h|cpp|java|rs|go)$/i;
 const $ = (sel) => document.querySelector(sel);
 
 // ---- Embedded sources (worker + Python runtime live in <script type="text/plain"> blocks)
@@ -4047,6 +4350,7 @@ function modeFor(path) {
 }
 
 function snapshotFiles() {
+  flushNotebooks();
   for (const [path, doc] of docs) project.files[path] = { text: doc.getValue() };
 }
 
@@ -4074,6 +4378,7 @@ function uniqueName(base) {
 
 function addTextFile(path, text, { open = true, overwrite = false } = {}) {
   if (project.files[path] && !overwrite) path = uniqueName(path);
+  notebooks.delete(path); // re-read from the new text if it is a notebook
   project.files[path] = { text };
   if (docs.has(path)) {
     docs.get(path).setValue(text);
@@ -4098,6 +4403,7 @@ function addBinaryFile(path, bytes) {
 }
 
 function deleteFile(path) {
+  onFileDeleted(path);
   delete project.files[path];
   docs.delete(path);
   project.order = project.order.filter((p) => p !== path);
@@ -4127,6 +4433,7 @@ function renameFile(oldPath, newPath) {
   removed.add(oldPath);
   dirty.delete(oldPath);
   dirty.add(newPath);
+  onFileRenamed(oldPath, newPath);
   removed.delete(newPath);
   renderTabs();
   scheduleSave();
@@ -4137,11 +4444,19 @@ function openFile(path) {
   if (!docs.has(path)) return;
   project.active = path;
   const doc = docs.get(path);
-  if (cm.getDoc() !== doc) cm.swapDoc(doc);
-  cm.setOption('mode', modeFor(path));
+  const notebook = isNotebook(path);
+  $('#editor').hidden = notebook;
+  $('#notebook').hidden = !notebook;
+  if (notebook) {
+    openNotebook(path);
+  } else {
+    if (cm.getDoc() !== doc) cm.swapDoc(doc);
+    cm.setOption('mode', modeFor(path));
+    cm.refresh();
+    cm.focus();
+  }
   renderTabs();
   updateCursorStatus();
-  cm.focus();
   scheduleSave();
   onActiveFileChanged();
 }
@@ -4269,10 +4584,10 @@ class Python {
 
   onMessage(msg) {
     switch (msg.type) {
-      case 'stdout': term.write(msg.text, 'stdout'); break;
-      case 'stderr': term.write(msg.text, 'stderr'); break;
-      case 'display': term.rich(msg.mime, msg.data, msg.meta); break;
-      case 'status': term.system(msg.text); break;
+      case 'stdout': (outputSink || term).write(msg.text, 'stdout'); break;
+      case 'stderr': (outputSink || term).write(msg.text, 'stderr'); break;
+      case 'display': (outputSink || term).rich(msg.mime, msg.data, msg.meta); break;
+      case 'status': (outputSink || term).system(msg.text); break;
       case 'stdin-request': showStdinField(); break;
       case 'debug-pause': onDebugPause(msg.payload); break;
       case 'error-location': markError(msg.path, msg.line); break;
@@ -4343,6 +4658,8 @@ let term; // Terminal
 const py = new Python();
 const ui = { busy: false, runStart: 0, timer: null, stopTimer: null, continuation: false, indent: '' };
 let stdinField = null;
+let stdinTarget = null; // the Terminal (console or notebook cell) showing the input field
+let outputSink = null; // when a notebook cell runs, its output goes here instead of the console
 
 function setState(kind, text) {
   const el = $('#st-state');
@@ -4381,7 +4698,7 @@ function setBusy(busy, label = 'Running') {
 function focusRepl(force = true) {
   if (ui.busy) return;
   const active = document.activeElement;
-  if (!force && active && (active.closest('.CodeMirror') || active.matches('input, textarea, select'))) return;
+  if (!force && active && (active.closest('.CodeMirror') || active.closest('#notebook') || active.matches('input, textarea, select'))) return;
   if ($('#panel-console').hidden) return;
   $('#repl').focus({ preventScroll: true });
 }
@@ -4521,6 +4838,7 @@ async function main() {
   await importSharedFromHash();
   wireUi();
   initFeatures();
+  initNotebooks();
   renderExamples();
   restoreSplit();
 
@@ -4582,6 +4900,11 @@ function runTarget() {
 async function runFile(mode = 'run') {
   if (!py.ready || ui.busy) return;
   if (typeof mode !== 'string') mode = 'run';
+  if (isNotebook(project.active)) {
+    if (mode === 'debug') toast('Notebooks run cell by cell; after an error, %debug in a cell inspects it');
+    else nbRunAll();
+    return;
+  }
   const path = runTarget();
   if (!path) { toast('No .py file to run'); return; }
   saveProject();
@@ -4652,7 +4975,7 @@ function stop() {
   if (py.waitingInput && stdinField) {
     const typed = stdinField.value;
     removeStdinField();
-    term.endInputLine(typed + '^C');
+    (stdinTarget || term).endInputLine(typed + '^C');
   }
   py.interrupt();
   clearTimeout(ui.stopTimer);
@@ -4666,6 +4989,7 @@ function stop() {
 
 function restart(message = 'Restarting Python…') {
   py.terminate();
+  onPythonRestart();
   clearInterval(ui.timer);
   ui.busy = false;
   const btn = $('#stop-btn');
@@ -4814,9 +5138,11 @@ function withTimeout(promise, ms) {
 
 function showStdinField() {
   py.waitingInput = true;
-  showPanel('console');
+  const target = outputSink || term;
+  stdinTarget = target;
+  if (!outputSink) showPanel('console');
   removeStdinField();
-  const line = term.currentLine();
+  const line = target.currentLine();
   const input = document.createElement('input');
   input.className = 'stdin-field';
   input.spellcheck = false;
@@ -4827,23 +5153,23 @@ function showStdinField() {
       e.preventDefault();
       const value = input.value;
       removeStdinField();
-      term.endInputLine(value);
+      target.endInputLine(value);
       py.answerStdin(value);
     } else if ((e.key === 'c' || e.key === 'C') && e.ctrlKey && input.selectionStart === input.selectionEnd) {
       e.preventDefault();
       removeStdinField();
-      term.endInputLine(input.value + '^C');
+      target.endInputLine(input.value + '^C');
       py.interrupt();
     } else if ((e.key === 'd' || e.key === 'D') && e.ctrlKey && !input.value) {
       e.preventDefault();
       removeStdinField();
-      term.endInputLine('');
+      target.endInputLine('');
       py.answerStdin(null, 3);
     }
   });
   line.appendChild(input);
   stdinField = input;
-  term.scrollToEnd(true);
+  target.scrollToEnd(true);
   input.focus({ preventScroll: true });
 }
 
@@ -4998,7 +5324,7 @@ async function uploadFiles(fileList) {
     }
     const text = TEXT_EXT.test(file.name) || !/\.[a-z0-9]+$/i.test(file.name) ? tryDecodeText(bytes) : null;
     if (text !== null && bytes.length < 1024 * 1024) {
-      addTextFile(file.name, text, { open: /\.pyi?$/i.test(file.name), overwrite: true });
+      addTextFile(file.name, text, { open: /\.(pyi?|ipynb)$/i.test(file.name), overwrite: true });
     } else {
       addBinaryFile(file.name, bytes);
     }
@@ -5110,7 +5436,7 @@ async function decodeShare(s) {
 async function share() {
   snapshotFiles();
   const files = {};
-  for (const p of project.order) files[p] = docs.get(p).getValue();
+  for (const p of project.order) files[p] = isNotebook(p) ? notebookJson(p, false) : docs.get(p).getValue();
   const encoded = await encodeShare(JSON.stringify({ files, active: project.active }));
   const url = `${location.origin}${location.pathname}#code=${encoded}`;
   if (url.length > 100000) toast('Warning: this link is very long and may not work everywhere', 4000);
@@ -5136,9 +5462,7 @@ function renderExamples() {
     b.lastChild.textContent = ex.desc;
     b.addEventListener('click', () => {
       closeMenus();
-      if (project.files[ex.name] && docs.get(ex.name).getValue() === ex.code) openFile(ex.name);
-      else addTextFile(ex.name, ex.code);
-      toast(`Opened ${ex.name} — press Run`);
+      openExample(ex);
     });
     menu.appendChild(b);
   }
@@ -5216,7 +5540,6 @@ function wireUi() {
   $('#stop-btn').addEventListener('click', stop);
   $('#restart-btn').addEventListener('click', () => restart());
   $('#share-btn').addEventListener('click', share);
-  $('#new-file-btn').addEventListener('click', newFile);
   $('#download-file-btn').addEventListener('click', () => {
     const path = project.active;
     downloadBlob(docs.get(path).getValue(), path.split('/').pop(), 'text/plain;charset=utf-8');
@@ -5747,6 +6070,7 @@ function applyFullText(doc, text) {
 }
 
 async function formatDocument() {
+  if (isNotebook(project.active)) return formatNotebook();
   if (!isPy(project.active)) { toast('Formatting is available for .py files'); return; }
   if (!py.ready || ui.busy) { toast('Python is busy'); return; }
   const doc = cm.getDoc();
@@ -5918,6 +6242,14 @@ function scheduleOutline() {
 
 function renderOutline() {
   const box = $('#outline-list');
+  if (isNotebook(project.active)) {
+    $('#outline-file').textContent = project.active;
+    const items = notebookOutline();
+    box.innerHTML = items.map((it) => `<li data-cell="${it.index}" style="padding-left:${8 + it.depth * 16}px"><span class="okind ${it.kind}">${it.kind === 'class' ? 'C' : it.kind === 'cell' ? '§' : it.kind === 'heading' ? '#' : 'ƒ'}</span><span>${esc(it.name)}</span></li>`).join('')
+      || '<li class="muted">Add markdown headings to build an outline.</li>';
+    box.querySelectorAll('li[data-cell]').forEach((li) => li.addEventListener('click', () => selectCell(+li.dataset.cell)));
+    return;
+  }
   const items = computeOutline();
   $('#outline-file').textContent = project.active;
   box.innerHTML = items.length
@@ -5954,6 +6286,7 @@ function runSearch() {
   if (!re) { showResults('', []); return; }
   const results = [];
   for (const path of project.order) {
+    if (isNotebook(path)) continue;
     const doc = docs.get(path);
     let n = 0;
     doc.eachLine((h) => {
@@ -5975,6 +6308,7 @@ function replaceAll() {
   const rep = $('#replace-input').value;
   let files = 0, count = 0;
   for (const path of project.order) {
+    if (isNotebook(path)) continue;
     const doc = docs.get(path);
     const text = doc.getValue();
     const matches = text.match(re);
@@ -6158,6 +6492,14 @@ function commands() {
     ['Fold all', '', () => cm.execCommand('foldAll')],
     ['Unfold all', '', () => cm.execCommand('unfoldAll')],
     ['New file', '', newFile],
+    ['New notebook (.ipynb)', '', newNotebook],
+    ['Notebook: Run all cells', '', () => isNotebook(project.active) ? nbRunAll() : toast('Open a notebook first')],
+    ['Notebook: Run cells above', '', () => isNotebook(project.active) && nbRunAbove()],
+    ['Notebook: Run selected cell and below', '', () => isNotebook(project.active) && nbRunBelow()],
+    ['Notebook: Restart Python and run all', '', () => isNotebook(project.active) && restartAndRunAll()],
+    ['Notebook: Clear all outputs', '', () => isNotebook(project.active) && clearOutputs()],
+    ['Notebook: Export as Python script (# %%)', '', () => isNotebook(project.active) ? exportNotebookAsScript() : toast('Open a notebook first')],
+    ['Convert Python script (# %% cells) to notebook', '', () => isNotebook(project.active) ? toast('This is already a notebook') : convertScriptToNotebook()],
     ['Rename current file…', '', () => { const t = document.querySelector('.tab.active'); if (t) startRename(t, project.active); }],
     ['Delete current file', '', () => { if (confirm(`Delete ${project.active}?`)) deleteFile(project.active); }],
     ['Download current file', '', () => $('#download-file-btn').click()],
@@ -6244,6 +6586,11 @@ function renderPalette() {
     items = commands().map((c) => ({ ...c, score: fuzzy(q, c.title) })).filter((c) => c.score > 0);
     if (q) items.sort((a, b) => b.score - a.score);
     hint = 'Commands';
+  } else if (raw.startsWith('@') && isNotebook(project.active)) {
+    const q = raw.slice(1).trim();
+    items = notebookOutline().map((o) => ({ title: o.name, key: `cell ${o.index + 1}`, run: () => selectCell(o.index), score: fuzzy(q, o.name) }))
+      .filter((c) => c.score > 0);
+    hint = `Headings in ${project.active}`;
   } else if (raw.startsWith('@')) {
     const q = raw.slice(1).trim();
     items = computeOutline().map((o) => ({
@@ -6279,11 +6626,6 @@ function runPaletteItem(i) {
   if (it) setTimeout(() => it.run(), 0);
 }
 
-function openExample(ex) {
-  if (project.files[ex.name] && docs.get(ex.name).getValue() === ex.code) openFile(ex.name);
-  else addTextFile(ex.name, ex.code);
-  toast(`Opened ${ex.name} — press Run`);
-}
 
 // ---------------------------------------------------------------------------
 // Hooks called from the core app
@@ -6458,7 +6800,945 @@ window.ideApi = {
   toggleBreakpoint, clearAllBreakpoints, collectBreakpoints, debugCommand, lintActive, formatDocument,
   gotoDefinition, findReferences, renameSymbol, openPalette, openSearch, runCell, runTests, runFile,
   addTextFile, openFile, showPanel, project, docs,
+  newNotebook, nbRunAll, notebookModel, notebookJson, convertScriptToNotebook, exportNotebookAsScript, clearOutputs, selectCell,
 };
+
+// ===========================================================================
+// Notebooks (.ipynb): Jupyter-compatible cells with inline outputs, sharing
+// the console's Python namespace ("kernel").
+// ===========================================================================
+const isNotebook = (path) => /\.ipynb$/i.test(path || '');
+const LIB = {
+  marked: 'https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js',
+  purify: 'https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js',
+  katexJs: 'https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js',
+  katexCss: 'https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css',
+};
+
+// ---------------------------------------------------------------------------
+// Markdown + math rendering (libraries load on first use)
+// ---------------------------------------------------------------------------
+const scriptPromises = new Map();
+function loadScript(src) {
+  if (!scriptPromises.has(src)) {
+    scriptPromises.set(src, new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = src;
+      s.crossOrigin = 'anonymous';
+      s.onload = resolve;
+      s.onerror = () => { scriptPromises.delete(src); reject(new Error('Could not load ' + src)); };
+      document.head.appendChild(s);
+    }));
+  }
+  return scriptPromises.get(src);
+}
+
+function loadCss(href) {
+  if (document.querySelector(`link[href="${href}"]`)) return;
+  const l = document.createElement('link');
+  l.rel = 'stylesheet';
+  l.crossOrigin = 'anonymous';
+  l.href = href;
+  document.head.appendChild(l);
+}
+
+const ensureMarkdown = () => Promise.all([loadScript(LIB.marked), loadScript(LIB.purify)]);
+function ensureKatex() {
+  loadCss(LIB.katexCss);
+  return loadScript(LIB.katexJs);
+}
+
+function katexHtml(tex, display) {
+  try {
+    return window.katex.renderToString(tex, { displayMode: display, throwOnError: false, output: 'html' });
+  } catch {
+    return `<code>${esc(tex)}</code>`;
+  }
+}
+
+// Markdown with $inline$ and $$display$$ math. Math is cut out before the
+// markdown parser runs (so _ and * inside formulas survive), and the HTML is
+// sanitised with DOMPurify because notebooks can come from anywhere.
+async function markdownToHtml(text) {
+  await ensureMarkdown();
+  const math = [];
+  const stash = (tex, display) => { math.push({ tex, display }); return `KATEXMATHX${math.length - 1}XEND`; };
+  let src = text
+    .replace(/\$\$([\s\S]+?)\$\$/g, (_, t) => stash(t, true))
+    .replace(/\\\[([\s\S]+?)\\\]/g, (_, t) => stash(t, true))
+    .replace(/\\\(([\s\S]+?)\\\)/g, (_, t) => stash(t, false))
+    .replace(/(^|[^\\$])\$([^\s$](?:[^$\n]*?[^\s$])?)\$(?!\d)/g, (_, pre, t) => pre + stash(t, false));
+  let html = window.DOMPurify.sanitize(window.marked.parse(src, { mangle: false, headerIds: false }));
+  if (math.length) {
+    await ensureKatex();
+    html = html.replace(/KATEXMATHX(\d+)XEND/g, (_, i) => katexHtml(math[+i].tex, math[+i].display));
+  }
+  return html;
+}
+
+async function renderMarkdownInto(el, text) {
+  try {
+    el.innerHTML = await markdownToHtml(text);
+    el.querySelectorAll('a[href]').forEach((a) => { a.target = '_blank'; a.rel = 'noopener noreferrer'; });
+  } catch {
+    el.textContent = text; // offline: show the source
+  }
+}
+
+async function renderLatexInto(el, text) {
+  let tex = text.trim();
+  let display = true;
+  const m = /^\$\$([\s\S]*)\$\$$/.exec(tex) || /^\$([\s\S]*)\$$/.exec(tex) || /^\\\[([\s\S]*)\\\]$/.exec(tex);
+  if (m) tex = m[1];
+  tex = tex.replace(/^\\displaystyle\s*/, '');
+  try {
+    await ensureKatex();
+    el.innerHTML = katexHtml(tex, display);
+  } catch {
+    el.textContent = text;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Model: parse / serialise nbformat 4
+// ---------------------------------------------------------------------------
+const notebooks = new Map(); // path -> model
+const joinSrc = (s) => (Array.isArray(s) ? s.join('') : String(s ?? ''));
+const splitSrc = (s) => (s ? s.split(/(?<=\n)/) : []);
+const newId = () => Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 6);
+
+function newCell(type = 'code', source = '') {
+  return { id: newId(), type, source, outputs: [], count: null, metadata: {} };
+}
+
+function parseOutputs(outputs) {
+  const out = [];
+  for (const o of outputs || []) {
+    if (o.output_type === 'stream') out.push({ type: 'stream', name: o.name || 'stdout', text: joinSrc(o.text) });
+    else if (o.output_type === 'error') out.push({ type: 'error', ename: o.ename, evalue: o.evalue, traceback: o.traceback || [] });
+    else if (o.output_type === 'display_data' || o.output_type === 'execute_result') {
+      const data = {};
+      for (const [k, v] of Object.entries(o.data || {})) data[k] = typeof v === 'string' || Array.isArray(v) ? joinSrc(v) : JSON.stringify(v);
+      out.push({ type: 'display', data, metadata: o.metadata || {}, result: o.output_type === 'execute_result' });
+    }
+  }
+  return out;
+}
+
+// "# %%" scripts (VS Code / Jupytext "percent" format) become notebooks too.
+function scriptToCells(text) {
+  const cells = [];
+  let cur = null;
+  const push = () => {
+    if (!cur) return;
+    let src = cur.lines.join('\n').replace(/^\n+|\s+$/g, '');
+    if (cur.type === 'markdown') src = src.split('\n').map((l) => l.replace(/^# ?/, '')).join('\n');
+    if (src || cur.type === 'code') cells.push(newCell(cur.type, src));
+  };
+  for (const line of text.split('\n')) {
+    const m = /^#\s*%%(.*)$/.exec(line);
+    if (m) {
+      push();
+      cur = { type: /\[markdown\]/i.test(m[1]) ? 'markdown' : 'code', lines: [] };
+    } else {
+      if (!cur) cur = { type: 'code', lines: [] };
+      cur.lines.push(line);
+    }
+  }
+  push();
+  return cells.filter((c, i) => c.source || i === cells.length - 1).length ? cells.filter((c) => c.source) : [newCell()];
+}
+
+function parseNotebook(text) {
+  if (!text.trim()) return { cells: [newCell()], metadata: {}, converted: false };
+  try {
+    const nb = JSON.parse(text);
+    if (!Array.isArray(nb.cells)) throw new Error('no cells');
+    const cells = nb.cells.map((c) => ({
+      id: c.id || newId(),
+      type: c.cell_type === 'markdown' ? 'markdown' : c.cell_type === 'raw' ? 'raw' : 'code',
+      source: joinSrc(c.source),
+      outputs: c.cell_type === 'code' ? parseOutputs(c.outputs) : [],
+      count: c.execution_count ?? null,
+      metadata: c.metadata || {},
+    }));
+    return { cells: cells.length ? cells : [newCell()], metadata: nb.metadata || {}, converted: false };
+  } catch {
+    return { cells: scriptToCells(text), metadata: {}, converted: true };
+  }
+}
+
+function toNbOutput(o, count) {
+  if (o.type === 'stream') return { output_type: 'stream', name: o.name, text: splitSrc(o.text) };
+  if (o.type === 'error') return { output_type: 'error', ename: o.ename, evalue: o.evalue, traceback: o.traceback };
+  const data = {};
+  for (const [k, v] of Object.entries(o.data)) data[k] = k.startsWith('image/') && k !== 'image/svg+xml' ? v : splitSrc(v);
+  if (o.result) return { output_type: 'execute_result', execution_count: count ?? null, data, metadata: o.metadata || {} };
+  return { output_type: 'display_data', data, metadata: o.metadata || {} };
+}
+
+function serializeNotebook(model, withOutputs = true) {
+  const meta = {
+    ...model.metadata,
+    kernelspec: model.metadata?.kernelspec || { display_name: 'Python 3 (Pyodide)', language: 'python', name: 'python3' },
+    language_info: { name: 'python', version: (py.version && py.version.python) || '3.13', file_extension: '.py', mimetype: 'text/x-python' },
+  };
+  return JSON.stringify({
+    cells: model.cells.map((c) => {
+      const cell = { cell_type: c.type, id: c.id, metadata: c.metadata || {}, source: splitSrc(c.source) };
+      if (c.type === 'code') {
+        cell.execution_count = withOutputs ? c.count : null;
+        cell.outputs = withOutputs ? c.outputs.map((o) => toNbOutput(o, c.count)) : [];
+      }
+      return cell;
+    }),
+    metadata: meta,
+    nbformat: 4,
+    nbformat_minor: 5,
+  }, null, 1) + '\n';
+}
+
+function notebookModel(path) {
+  if (!notebooks.has(path)) notebooks.set(path, parseNotebook(docs.get(path)?.getValue() || ''));
+  return notebooks.get(path);
+}
+
+function notebookJson(path, withOutputs = true) {
+  return serializeNotebook(notebookModel(path), withOutputs);
+}
+
+// Write the live model back into its document (what is saved / downloaded).
+const nbDirty = new Set();
+let nbFlushTimer = null;
+function markNotebookDirty(path = nb.path) {
+  if (!path) return;
+  nbDirty.add(path);
+  clearTimeout(nbFlushTimer);
+  nbFlushTimer = setTimeout(() => { flushNotebooks(); scheduleSave(); }, 400);
+}
+
+function flushNotebooks() {
+  for (const path of nbDirty) {
+    const doc = docs.get(path);
+    if (doc && notebooks.has(path)) {
+      doc.setValue(serializeNotebook(notebooks.get(path)));
+      project.files[path] = { text: doc.getValue() };
+      dirty.add(path);
+    }
+  }
+  nbDirty.clear();
+}
+
+function onFileRenamed(oldPath, newPath) {
+  if (notebooks.has(oldPath)) {
+    notebooks.set(newPath, notebooks.get(oldPath));
+    notebooks.delete(oldPath);
+  }
+  if (nbDirty.delete(oldPath)) nbDirty.add(newPath);
+  if (nb.path === oldPath) nb.path = newPath;
+  if (project.active === newPath && (isNotebook(newPath) !== isNotebook(oldPath))) setTimeout(() => openFile(newPath), 0);
+}
+
+function onFileDeleted(path) {
+  notebooks.delete(path);
+  nbDirty.delete(path);
+  if (nb.path === path) nb.path = null;
+}
+
+// ---------------------------------------------------------------------------
+// View
+// ---------------------------------------------------------------------------
+const nb = { path: null, selected: 0, editing: false, pendingD: 0 };
+const fakeScroller = { scrollHeight: 0, scrollTop: 0, clientHeight: 0 };
+
+function openNotebook(path) {
+  // Keep the JSON document out of the main editor while the notebook is shown.
+  if (cm.getDoc() === docs.get(path)) cm.swapDoc(CodeMirror.Doc('', 'text/plain'));
+  const model = notebookModel(path);
+  if (nb.path !== path || !model.rendered) {
+    nb.path = path;
+    nb.selected = Math.min(nb.selected, model.cells.length - 1);
+    renderNotebook();
+    if (model.converted) {
+      model.converted = false;
+      toast('Converted to a notebook (the file was not valid .ipynb JSON)', 4000);
+      markNotebookDirty(path);
+    }
+  } else {
+    refreshEditors();
+  }
+  updateNbToolbar();
+  setTimeout(() => focusNotebook(), 0);
+}
+
+function currentModel() {
+  return nb.path ? notebookModel(nb.path) : null;
+}
+
+function renderNotebook() {
+  const model = currentModel();
+  const box = $('#nb-cells');
+  for (const c of model.cells) if (c.view) c.view = null;
+  box.textContent = '';
+  model.cells.forEach((c) => box.appendChild(buildCell(c)));
+  model.rendered = true;
+  refreshEditors();
+  selectCell(nb.selected, false);
+}
+
+// CodeMirror measures its size when created; editors built while detached or
+// hidden must be refreshed once they are visible.
+function refreshEditors(cells = currentModel()?.cells || []) {
+  for (const c of cells) if (c.view && !c.view.input.hidden) c.view.editor.refresh();
+}
+
+function cellIndex(cell) {
+  return currentModel().cells.indexOf(cell);
+}
+
+function promptText(cell) {
+  if (cell.type !== 'code') return '';
+  if (cell.state === 'running') return '[*]:';
+  if (cell.state === 'queued') return '[ ]:';
+  return `[${cell.count ?? ' '}]:`;
+}
+
+function buildCell(cell) {
+  const el = document.createElement('div');
+  el.className = `nb-cell ${cell.type}`;
+  el.innerHTML = `
+    <div class="nb-gutter">
+      <span class="nb-prompt"></span>
+      ${cell.type === 'code' ? '<button class="nb-run" title="Run cell (Shift+Enter)">▶</button>' : ''}
+    </div>
+    <div class="nb-main">
+      <div class="nb-input"></div>
+      ${cell.type === 'markdown' ? '<div class="nb-md md"></div>' : ''}
+      <div class="nb-output"></div>
+    </div>
+    <div class="nb-tools">
+      <button data-act="up" title="Move up">↑</button>
+      <button data-act="down" title="Move down">↓</button>
+      <button data-act="type" title="Switch code / markdown (Y / M)">${cell.type === 'code' ? 'M↓' : 'Py'}</button>
+      <button data-act="clear" title="Clear output">⌫</button>
+      <button data-act="delete" title="Delete cell (D, D)">🗑</button>
+    </div>`;
+  const view = { el, prompt: el.querySelector('.nb-prompt'), input: el.querySelector('.nb-input'), md: el.querySelector('.nb-md'), out: el.querySelector('.nb-output') };
+  cell.view = view;
+  view.prompt.textContent = promptText(cell);
+
+  const editor = CodeMirror(view.input, {
+    value: cell.source,
+    mode: cell.type === 'code' ? { name: 'python', version: 3, singleLineStringErrors: false } : cell.type === 'markdown' ? 'markdown' : 'text/plain',
+    indentUnit: 4,
+    tabSize: 4,
+    indentWithTabs: false,
+    lineWrapping: cell.type !== 'code' || !!settings.wrap,
+    matchBrackets: true,
+    autoCloseBrackets: cell.type === 'code',
+    viewportMargin: Infinity,
+    keyMap: CodeMirror.keyMap.sublime ? 'sublime' : 'default',
+    extraKeys: CodeMirror.normalizeKeyMap({
+      'Shift-Enter': () => runAndAdvance(cell),
+      'Ctrl-Enter': () => runCellInPlace(cell),
+      'Cmd-Enter': () => runCellInPlace(cell),
+      'Alt-Enter': () => { runCellInPlace(cell); insertCell('below', 'code', true); },
+      Esc: () => commandMode(),
+      'Ctrl-Space': (ed) => nbComplete(ed),
+      Tab: (ed) => {
+        if (ed.somethingSelected()) return ed.indentSelection('add');
+        const before = ed.getLine(ed.getCursor().line).slice(0, ed.getCursor().ch);
+        if (cell.type === 'code' && /[\w.)\]]$/.test(before)) return nbComplete(ed);
+        ed.replaceSelection(' '.repeat(4 - (ed.getCursor().ch % 4)), 'end', '+input');
+      },
+      'Shift-Tab': (ed) => ed.indentSelection('subtract'),
+      'Ctrl-/': 'toggleComment',
+      'Cmd-/': 'toggleComment',
+      'Ctrl-S': () => saveCommand(),
+      'Cmd-S': () => saveCommand(),
+      Up: (ed) => moveFromEditor(ed, -1),
+      Down: (ed) => moveFromEditor(ed, 1),
+    }),
+  });
+  view.editor = editor;
+  editor.on('changes', () => {
+    cell.source = editor.getValue();
+    markNotebookDirty();
+  });
+  editor.on('focus', () => {
+    selectCell(cellIndex(cell), false);
+    nb.editing = true;
+    el.classList.add('editing');
+  });
+  editor.on('blur', () => el.classList.remove('editing'));
+  editor.on('inputRead', (ed, change) => {
+    if (cell.type === 'code' && change.text.length === 1 && change.text[0] === '.' && py.ready && !ui.busy) setTimeout(() => nbComplete(ed), 0);
+  });
+
+  if (cell.type === 'markdown') {
+    showMarkdown(cell, !!cell.source.trim());
+    view.md.addEventListener('dblclick', () => editMarkdown(cell));
+  }
+  if (cell.type === 'raw') view.input.classList.add('raw');
+
+  // Saved outputs
+  replayOutputs(cell);
+
+  el.addEventListener('mousedown', (e) => {
+    if (e.target.closest('.nb-tools, .nb-run, .CodeMirror, input, iframe, a')) return;
+    selectCell(cellIndex(cell), false);
+    if (!e.target.closest('.nb-output')) setTimeout(() => focusNotebook(), 0);
+  });
+  el.querySelector('.nb-run')?.addEventListener('click', () => { selectCell(cellIndex(cell), false); runCellInPlace(cell); });
+  el.querySelector('.nb-tools').addEventListener('click', (e) => {
+    const act = e.target.closest('button')?.dataset.act;
+    if (!act) return;
+    selectCell(cellIndex(cell), false);
+    if (act === 'up') moveCell(-1);
+    else if (act === 'down') moveCell(1);
+    else if (act === 'delete') deleteCells();
+    else if (act === 'clear') clearOutputs([cell]);
+    else if (act === 'type') changeType(cell.type === 'code' ? 'markdown' : 'code');
+  });
+  return el;
+}
+
+function showMarkdown(cell, rendered) {
+  const v = cell.view;
+  v.input.hidden = rendered;
+  v.md.hidden = !rendered;
+  if (rendered) {
+    v.md.classList.remove('empty');
+    renderMarkdownInto(v.md, cell.source);
+  } else {
+    v.editor.refresh();
+  }
+  if (!cell.source.trim() && rendered) {
+    v.md.classList.add('empty');
+    v.md.textContent = 'Empty markdown cell — double-click to edit';
+  }
+}
+
+function editMarkdown(cell) {
+  showMarkdown(cell, false);
+  cell.view.editor.focus();
+  cell.view.editor.setCursor(cell.view.editor.lineCount(), 0);
+}
+
+function moveFromEditor(ed, dir) {
+  const cur = ed.getCursor();
+  if (ed.somethingSelected() || document.querySelector('.CodeMirror-hints')) return CodeMirror.Pass;
+  const atEdge = dir < 0 ? cur.line === 0 : cur.line === ed.lastLine();
+  if (!atEdge) return CodeMirror.Pass;
+  const model = currentModel();
+  const i = nb.selected + dir;
+  if (i < 0 || i >= model.cells.length) return CodeMirror.Pass;
+  selectCell(i, false);
+  const target = model.cells[i];
+  if (target.type === 'markdown' && !target.view.md.hidden) { focusNotebook(); return undefined; }
+  const te = target.view.editor;
+  te.focus();
+  te.setCursor(dir < 0 ? { line: te.lastLine(), ch: cur.ch } : { line: 0, ch: cur.ch });
+  return undefined;
+}
+
+function selectCell(i, scroll = true) {
+  const model = currentModel();
+  if (!model || !model.cells.length) return;
+  nb.selected = Math.max(0, Math.min(i, model.cells.length - 1));
+  model.cells.forEach((c, j) => c.view?.el.classList.toggle('selected', j === nb.selected));
+  if (scroll) model.cells[nb.selected].view?.el.scrollIntoView({ block: 'nearest' });
+  updateNbToolbar();
+}
+
+function focusNotebook() {
+  if ($('#notebook').hidden) return;
+  nb.editing = false;
+  $('#nb-cells').focus({ preventScroll: true });
+}
+
+function commandMode() {
+  const cell = currentModel().cells[nb.selected];
+  if (cell?.type === 'markdown') showMarkdown(cell, true);
+  cell?.view?.editor.getInputField().blur();
+  focusNotebook();
+}
+
+function enterEditMode() {
+  const cell = currentModel().cells[nb.selected];
+  if (!cell) return;
+  if (cell.type === 'markdown') editMarkdown(cell);
+  else cell.view.editor.focus();
+}
+
+function updateNbToolbar() {
+  const model = currentModel();
+  if (!model) return;
+  const cell = model.cells[nb.selected];
+  $('#nb-type').value = cell ? cell.type : 'code';
+  const running = model.cells.some((c) => c.state === 'running' || c.state === 'queued');
+  $('#nb-status').textContent = running ? 'Running…' : py.ready ? `Python ${py.version?.python || ''} · idle` : 'Python is loading…';
+  $('#nb-status').classList.toggle('busy', running);
+}
+
+// ---------------------------------------------------------------------------
+// Editing operations
+// ---------------------------------------------------------------------------
+function insertCell(where, type = 'code', edit = true, source = '') {
+  const model = currentModel();
+  const cell = newCell(type, source);
+  const at = where === 'above' ? nb.selected : nb.selected + 1;
+  model.cells.splice(at, 0, cell);
+  const box = $('#nb-cells');
+  box.insertBefore(buildCell(cell), box.children[at] || null);
+  refreshEditors([cell]);
+  selectCell(at);
+  markNotebookDirty();
+  if (edit) setTimeout(() => (type === 'markdown' ? editMarkdown(cell) : cell.view.editor.focus()), 0);
+  return cell;
+}
+
+const deletedCells = [];
+function deleteCells() {
+  const model = currentModel();
+  const [cell] = model.cells.splice(nb.selected, 1);
+  if (!cell) return;
+  deletedCells.push({ cell, index: nb.selected });
+  cell.view.el.remove();
+  if (!model.cells.length) {
+    model.cells.push(newCell());
+    $('#nb-cells').appendChild(buildCell(model.cells[0]));
+    refreshEditors();
+  }
+  selectCell(Math.min(nb.selected, model.cells.length - 1));
+  markNotebookDirty();
+  toast('Cell deleted — press Z to undo', 2500);
+}
+
+function undoDelete() {
+  const d = deletedCells.pop();
+  if (!d) return;
+  const model = currentModel();
+  const at = Math.min(d.index, model.cells.length);
+  model.cells.splice(at, 0, d.cell);
+  const box = $('#nb-cells');
+  box.insertBefore(buildCell(d.cell), box.children[at] || null);
+  refreshEditors([d.cell]);
+  selectCell(at);
+  markNotebookDirty();
+}
+
+function moveCell(dir) {
+  const model = currentModel();
+  const i = nb.selected, j = i + dir;
+  if (j < 0 || j >= model.cells.length) return;
+  [model.cells[i], model.cells[j]] = [model.cells[j], model.cells[i]];
+  const box = $('#nb-cells');
+  const a = model.cells[j].view.el;
+  if (dir < 0) box.insertBefore(a, model.cells[i].view.el);
+  else box.insertBefore(a, model.cells[i].view.el.nextSibling);
+  selectCell(j);
+  markNotebookDirty();
+}
+
+function changeType(type) {
+  const model = currentModel();
+  const cell = model.cells[nb.selected];
+  if (!cell || cell.type === type) return;
+  cell.type = type;
+  if (type !== 'code') { cell.outputs = []; cell.count = null; }
+  const old = cell.view.el;
+  old.replaceWith(buildCell(cell));
+  refreshEditors([cell]);
+  selectCell(nb.selected);
+  markNotebookDirty();
+  focusNotebook();
+}
+
+function clearOutputs(cells = currentModel().cells) {
+  for (const c of cells) {
+    if (c.type !== 'code') continue;
+    c.outputs = [];
+    c.count = null;
+    if (c.view) {
+      c.view.out.textContent = '';
+      c.view.prompt.textContent = promptText(c);
+    }
+  }
+  markNotebookDirty();
+}
+
+// ---------------------------------------------------------------------------
+// Outputs: a Terminal per cell that also records nbformat outputs
+// ---------------------------------------------------------------------------
+const MAX_STREAM = 200000;
+
+class CellSink {
+  constructor(cell) {
+    this.cell = cell;
+    this.t = new Terminal(cell.view.out, fakeScroller);
+  }
+
+  record(name, text) {
+    const outs = this.cell.outputs;
+    const last = outs[outs.length - 1];
+    if (last && last.type === 'stream' && last.name === name) {
+      if (last.text.length < MAX_STREAM) last.text += text;
+    } else outs.push({ type: 'stream', name, text });
+  }
+
+  write(text, cls) {
+    this.record(cls === 'stderr' ? 'stderr' : 'stdout', text);
+    this.t.write(text, cls);
+  }
+
+  rich(mime, data, meta) {
+    const result = !!(meta && meta.result);
+    if (result) meta = {};
+    this.cell.outputs.push({ type: 'display', result, data: { [mime]: data }, metadata: meta && Object.keys(meta).length ? { [mime]: meta } : {} });
+    this.t.rich(mime, data, meta);
+  }
+
+  system(text) { this.t.system(text); }
+  currentLine() { return this.t.currentLine(); }
+  endInputLine(text) { this.record('stdout', text + '\n'); this.t.endInputLine(text); }
+  scrollToEnd() { this.cell.view?.el.scrollIntoView({ block: 'nearest' }); }
+  flush() { this.t.flush(); }
+}
+
+const RICH_ORDER = ['text/html', 'image/svg+xml', 'image/png', 'image/jpeg', 'text/markdown', 'text/latex', 'text/plain'];
+
+function replayOutputs(cell) {
+  if (!cell.outputs.length) return;
+  const t = new Terminal(cell.view.out, fakeScroller);
+  for (const o of cell.outputs) {
+    if (o.type === 'stream') t.write(o.text, o.name === 'stderr' ? 'stderr' : 'stdout');
+    else if (o.type === 'error') t.write(o.traceback.join('\n') + '\n', 'stderr');
+    else {
+      const mime = RICH_ORDER.find((m) => m in o.data) || Object.keys(o.data)[0];
+      if (!mime) continue;
+      const data = o.data[mime];
+      if (mime === 'text/plain') t.write(data.endsWith('\n') ? data : data + '\n', 'stdout');
+      else t.rich(mime, mime.startsWith('image/') && mime !== 'image/svg+xml' ? data.replace(/\s+/g, '') : data, (o.metadata && o.metadata[mime]) || {});
+    }
+  }
+  t.flush();
+}
+
+// ---------------------------------------------------------------------------
+// Execution queue
+// ---------------------------------------------------------------------------
+const nbQueue = [];
+let nbRunning = null;
+let execCounter = 0;
+
+function queueCells(cells) {
+  for (const c of cells) {
+    if (c.type !== 'code' || c.state) continue;
+    c.state = 'queued';
+    c.view && (c.view.prompt.textContent = promptText(c));
+    nbQueue.push({ path: nb.path, cell: c });
+  }
+  updateNbToolbar();
+  pumpQueue();
+}
+
+function cancelQueue() {
+  while (nbQueue.length) {
+    const { cell } = nbQueue.shift();
+    cell.state = null;
+    if (cell.view) cell.view.prompt.textContent = promptText(cell);
+  }
+  updateNbToolbar();
+}
+
+async function pumpQueue() {
+  if (nbRunning || !nbQueue.length) return;
+  if (!py.ready || ui.busy) { setTimeout(pumpQueue, 250); return; }
+  const { path, cell } = nbQueue.shift();
+  nbRunning = cell;
+  cell.state = 'running';
+  cell.outputs = [];
+  if (cell.view) {
+    cell.view.out.textContent = '';
+    cell.view.prompt.textContent = promptText(cell);
+  }
+  updateNbToolbar();
+  const sink = cell.view ? new CellSink(cell) : null;
+  const prevFocus = document.activeElement;
+  outputSink = sink;
+  setBusy(true, 'Running cell');
+  let status = 'complete';
+  try {
+    await syncFiles();
+    status = await py.call('repl', { line: cell.source, cell: true, autoInstall: settings.autoInstall });
+  } catch (err) {
+    status = 'exception';
+    if (sink && py.worker) sink.write(String(err.message || err) + '\n', 'stderr');
+  }
+  sink?.flush();
+  outputSink = null;
+  cell.state = null;
+  cell.count = ++execCounter;
+  if (cell.view) cell.view.prompt.textContent = promptText(cell);
+  nbRunning = null;
+  if (status !== 'complete') cancelQueue(); // stop "run all" at the first error, like Jupyter
+  markNotebookDirty(path);
+  if (py.ready) setBusy(false);
+  updateNbToolbar();
+  // input() fields and the console may have taken focus: give it back to the notebook.
+  const now = document.activeElement;
+  if (!$('#notebook').hidden && (!now || now === document.body || now.id === 'repl')) {
+    if (prevFocus && prevFocus !== document.body && prevFocus.isConnected && prevFocus.closest('#notebook')) prevFocus.focus({ preventScroll: true });
+    else focusNotebook();
+  }
+  pumpQueue();
+}
+
+function runCellInPlace(cell = currentModel().cells[nb.selected]) {
+  if (!cell) return;
+  if (cell.type === 'markdown') { showMarkdown(cell, true); focusNotebook(); return; }
+  if (cell.type === 'code') queueCells([cell]);
+}
+
+function runAndAdvance(cell = currentModel().cells[nb.selected]) {
+  runCellInPlace(cell);
+  const model = currentModel();
+  const i = model.cells.indexOf(cell);
+  if (i === model.cells.length - 1) insertCell('below', 'code', true);
+  else {
+    selectCell(i + 1);
+    const next = model.cells[i + 1];
+    if (next.type === 'code') next.view.editor.focus();
+    else focusNotebook();
+  }
+}
+
+function nbRunAll() {
+  const model = currentModel();
+  if (!model) return;
+  model.cells.filter((c) => c.type === 'markdown').forEach((c) => showMarkdown(c, true));
+  queueCells(model.cells);
+}
+
+function nbRunAbove() {
+  queueCells(currentModel().cells.slice(0, nb.selected));
+}
+
+function nbRunBelow() {
+  queueCells(currentModel().cells.slice(nb.selected));
+}
+
+async function restartAndRunAll() {
+  if (!confirm('Restart Python and run every cell from the top? All variables will be cleared.')) return;
+  restart('Restarting Python to run all cells…');
+  const t0 = Date.now();
+  while (!py.ready && Date.now() - t0 < 120000) await new Promise((r) => setTimeout(r, 150));
+  if (py.ready) nbRunAll();
+}
+
+function onPythonRestart() {
+  cancelQueue();
+  execCounter = 0;
+  if (nbRunning) {
+    nbRunning.state = null;
+    if (nbRunning.view) nbRunning.view.prompt.textContent = promptText(nbRunning);
+    nbRunning = null;
+  }
+  outputSink = null;
+}
+
+// ---------------------------------------------------------------------------
+// Completion in cells (console namespace)
+// ---------------------------------------------------------------------------
+function nbComplete(ed) {
+  if (!py.ready || ui.busy) return;
+  const hint = (editor, callback) => {
+    const cur = editor.getCursor();
+    withTimeout(py.call('complete', {
+      source: editor.getValue(), line: cur.line + 1, column: cur.ch, mode: 'console', path: '',
+    }), 6000).then((r) => {
+      if (!r.items.length) return callback(null);
+      callback({
+        list: r.items.map(([text, type]) => ({
+          text,
+          render(el) {
+            el.textContent = text;
+            if (type) { const t = document.createElement('span'); t.className = 'ht'; t.textContent = type; el.appendChild(t); }
+          },
+        })),
+        from: CodeMirror.Pos(cur.line, cur.ch - r.prefix),
+        to: cur,
+      });
+    }).catch(() => callback(null));
+  };
+  hint.async = true;
+  ed.showHint({ hint, completeSingle: false });
+}
+
+// ---------------------------------------------------------------------------
+// Notebook-wide commands
+// ---------------------------------------------------------------------------
+async function formatNotebook() {
+  if (!py.ready || ui.busy) { toast('Python is busy'); return; }
+  const cells = currentModel().cells.filter((c) => c.type === 'code' && c.source.trim() && !/^\s*[%!]/m.test(c.source));
+  toast('Formatting cells with Black…', 8000);
+  let n = 0, failed = 0;
+  for (const c of cells) {
+    try {
+      const out = (await withTimeout(py.call('format', { source: c.source }), 60000)).replace(/\n+$/, '');
+      if (out !== c.source) { c.view.editor.setValue(out); n++; }
+    } catch { failed++; }
+  }
+  toast(`Formatted ${n} cell${n === 1 ? '' : 's'}${failed ? ` (${failed} could not be parsed)` : ''}`);
+}
+
+function exportNotebookAsScript() {
+  const model = currentModel();
+  const parts = model.cells.map((c) => (c.type === 'markdown'
+    ? '# %% [markdown]\n' + c.source.split('\n').map((l) => (l ? '# ' + l : '#')).join('\n')
+    : '# %%\n' + c.source));
+  const name = uniqueName(nb.path.replace(/\.ipynb$/i, '.py'));
+  addTextFile(name, parts.join('\n\n') + '\n');
+  toast(`Exported to ${name}`);
+}
+
+function convertScriptToNotebook(path = project.active) {
+  if (!docs.has(path) || isNotebook(path)) return;
+  const model = { cells: scriptToCells(docs.get(path).getValue()), metadata: {} };
+  const name = uniqueName(path.replace(/\.py$/i, '') + '.ipynb');
+  notebooks.set(name, model);
+  addTextFile(name, serializeNotebook(model));
+  toast(`Created ${name}`);
+}
+
+function newNotebook() {
+  const model = {
+    cells: [
+      newCell('markdown', '# New notebook\n\nShift+Enter runs a cell. Cells share variables with each other and with the console.'),
+      newCell('code', ''),
+    ],
+    metadata: {},
+  };
+  const name = uniqueName('notebook.ipynb');
+  notebooks.set(name, model);
+  addTextFile(name, serializeNotebook(model));
+  nb.selected = 1;
+  setTimeout(() => selectCell(1), 0);
+}
+
+function exampleText(ex) {
+  if (!ex.cells) return ex.code;
+  const model = { cells: ex.cells.map(([type, src]) => newCell(type, src)), metadata: {} };
+  return serializeNotebook(model);
+}
+
+function openExample(ex) {
+  const text = exampleText(ex);
+  if (project.files[ex.name] && (ex.cells || docs.get(ex.name).getValue() === text)) {
+    openFile(ex.name);
+  } else {
+    notebooks.delete(ex.name);
+    addTextFile(ex.name, text);
+  }
+  toast(ex.cells ? `Opened ${ex.name} — Shift+Enter runs a cell` : `Opened ${ex.name} — press Run`);
+}
+
+function notebookOutline() {
+  const out = [];
+  currentModel()?.cells.forEach((c, index) => {
+    if (c.type === 'markdown') {
+      for (const line of c.source.split('\n')) {
+        const m = /^(#{1,6})\s+(.*)$/.exec(line);
+        if (m) out.push({ kind: 'heading', name: m[2].replace(/[*_`]/g, ''), depth: m[1].length - 1, index });
+      }
+    } else if (c.type === 'code') {
+      for (const line of c.source.split('\n')) {
+        const m = /^(async\s+def|def|class)\s+([A-Za-z_]\w*)/.exec(line);
+        if (m) out.push({ kind: m[1] === 'class' ? 'class' : 'def', name: m[2], depth: 1, index });
+      }
+    }
+  });
+  return out;
+}
+
+// ---------------------------------------------------------------------------
+// Wiring
+// ---------------------------------------------------------------------------
+function initNotebooks() {
+  const box = $('#nb-cells');
+  $('#nb-toolbar').addEventListener('click', (e) => {
+    const act = e.target.closest('button')?.dataset.nb;
+    if (!act) return;
+    ({
+      'add-code': () => insertCell('below', 'code'),
+      'add-md': () => insertCell('below', 'markdown'),
+      run: () => runAndAdvance(),
+      'run-all': nbRunAll,
+      restart: restartAndRunAll,
+      stop: () => stop(),
+      clear: () => clearOutputs(),
+      up: () => moveCell(-1),
+      down: () => moveCell(1),
+      del: deleteCells,
+    })[act]?.();
+  });
+  $('#nb-type').addEventListener('change', (e) => changeType(e.target.value));
+
+  // Jupyter-style command mode keys (when no cell editor has focus)
+  box.addEventListener('keydown', (e) => {
+    if (e.target !== box) return;
+    const k = e.key;
+    const mod = e.ctrlKey || e.metaKey;
+    const model = currentModel();
+    if (!model) return;
+    let handled = true;
+    if (k === 'Enter' && e.shiftKey) runAndAdvance();
+    else if (k === 'Enter' && mod) runCellInPlace();
+    else if (k === 'Enter' && e.altKey) { runCellInPlace(); insertCell('below', 'code', true); }
+    else if (k === 'Enter') enterEditMode();
+    else if (mod || e.altKey) handled = false;
+    else if (k === 'ArrowUp' || k === 'k') selectCell(nb.selected - 1);
+    else if (k === 'ArrowDown' || k === 'j') selectCell(nb.selected + 1);
+    else if (k === 'a') insertCell('above', 'code', false);
+    else if (k === 'b') insertCell('below', 'code', false);
+    else if (k === 'm') changeType('markdown');
+    else if (k === 'y') changeType('code');
+    else if (k === 'r') changeType('raw');
+    else if (k === 'z') undoDelete();
+    else if (k === 'd') {
+      if (Date.now() - nb.pendingD < 700) { nb.pendingD = 0; deleteCells(); } else { nb.pendingD = Date.now(); }
+    } else if (k === 'i' && nb.pendingI && Date.now() - nb.pendingI < 700) { nb.pendingI = 0; stop(); }
+    else if (k === 'i') nb.pendingI = Date.now();
+    else if (k === '0' && nb.pending0 && Date.now() - nb.pending0 < 700) { nb.pending0 = 0; restartAndRunAll(); }
+    else if (k === '0') nb.pending0 = Date.now();
+    else if (k === 'Home') selectCell(0);
+    else if (k === 'End') selectCell(model.cells.length - 1);
+    else handled = false;
+    if (handled) { e.preventDefault(); e.stopPropagation(); }
+  });
+  // Ctrl/Cmd+Enter inside the notebook must not run "the file" via the global handler.
+  $('#notebook').addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') e.stopPropagation();
+  });
+
+  // "+" menu: new Python file or notebook
+  $('#new-file-btn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+    toggleMenu(e.currentTarget, $('#new-menu'));
+  }, true);
+  $('#new-menu').addEventListener('click', (e) => {
+    const kind = e.target.closest('[data-new]')?.dataset.new;
+    if (!kind) return;
+    closeMenus();
+    if (kind === 'py') newFile();
+    else if (kind === 'nb') newNotebook();
+    else if (kind === 'txt') { const p = addTextFile(uniqueName('notes.md'), ''); const t = [...document.querySelectorAll('.tab')].find((x) => x.textContent.startsWith(p)); if (t) startRename(t, p); }
+  });
+
+  if (isNotebook(project.active)) openFile(project.active);
+}
 main().catch((err) => {
   console.error(err);
   document.body.insertAdjacentHTML('beforeend', `<pre style="position:fixed;bottom:30px;left:16px;right:16px;color:#c62828;background:#fff;padding:12px;border-radius:8px;z-index:999;white-space:pre-wrap">Startup error: ${String(err && err.stack || err).replace(/</g, '&lt;')}</pre>`);
